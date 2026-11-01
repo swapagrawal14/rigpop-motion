@@ -1,12 +1,9 @@
 <div align="center">
 
-# 🎬 rigpop-motion
+<img src="docs/banner.png" alt="rigpop-motion — cartoon animation from generated artwork" width="100%">
 
-**Full cartoon animation from generated artwork.**
-Pose flip-books, cut-out rigs, camera moves, lip-sync and cue-locked sound —
-rendered headlessly from Node.
-
-<sub>no editing software · no timeline scrubbing · no API keys</sub>
+**Pose flip-books · cut-out rigs · camera moves · lip-sync · cue-locked sound.**
+All rendered headlessly from Node — no editing software, no timeline scrubbing, no API keys.
 
 <br>
 
@@ -30,6 +27,8 @@ rendered headlessly from Node.
 </div>
 
 ---
+
+<img src="docs/logo.png" width="88" align="right" alt="rigpop-motion logo">
 
 ## 😵 The problem
 
@@ -174,16 +173,10 @@ engine cuts, normalises and times it for you.
 
 ---
 
-<div align="center">
-<sub>
+### The Rigpop family
 
-**The Rigpop family**
+- [**rigpop-agents**](https://github.com/swapagrawal14/rigpop-agents) — scripts in, talking videos out
+- [**rigpop-talk**](https://github.com/swapagrawal14/rigpop-talk) — the browser app
+- **rigpop-motion** — full cartoon animation *(you are here)*
 
-[agents](https://github.com/swapagrawal14/rigpop-agents) — scripts in, talking videos out &nbsp;·&nbsp;
-[talk](https://github.com/swapagrawal14/rigpop-talk) — the browser app &nbsp;·&nbsp;
-**motion** — full cartoon animation
-
-MIT © swapagrawal14
-
-</sub>
-</div>
+<sub>MIT © swapagrawal14 · brand assets regenerate with `node docs/brand/build-brand.mjs`</sub>

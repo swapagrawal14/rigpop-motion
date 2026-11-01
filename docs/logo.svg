@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="rigpop-motion">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#241d2e"/><stop offset="1" stop-color="#14111d"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="123" fill="url(#tile)" stroke="#3a3350" stroke-width="10"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M232 190 A 96 96 0 0 1 232 322" stroke="#ffd94a" stroke-width="18"/>
+    <path d="M210 152 A 138 138 0 0 1 210 360" stroke="#e8695f" stroke-width="18"/>
+    <path d="M188 114 A 180 180 0 0 1 188 398" stroke="#5a4f78" stroke-width="18"/>
+  </g>
+  <rect x="225" y="205" width="174" height="154" rx="26" fill="#f6f1e6" stroke="#14110f" stroke-width="14"/>
+  <path d="M285 240 L345 282 L285 324 Z" fill="#14110f"/>
+  <g fill="#ffd94a" transform="rotate(-20 0 0)">
+    <rect x="60" y="30" width="38" height="22"/><rect x="142" y="30" width="38" height="22"/>
+    <rect x="224" y="30" width="38" height="22"/><rect x="306" y="30" width="38" height="22"/>
+    <rect x="388" y="30" width="38" height="22"/>
+  </g>
+</svg>
