@@ -154,3 +154,99 @@ for (const [name, target] of [['room', ROOM], ['kitchen', ROOM]]) {
 }
 
 console.error('done');
+
+/* ---------------------------------------- 4. Kabir's cooking pose pack (v2) */
+// Five generated action drawings — the cooking equivalent of the walk cycle.
+// Each is cut the same way as the warden, plus one extra rule: enclosed white
+// regions that are too big to be an eye or a tooth (a stray counter the model
+// drew, a stray panel) get keyed out as well.
+const COOK = ['packet', 'break', 'stir', 'masala', 'taste'];
+const COOK_DIR = P('characters/kabir-cook');
+fs.mkdirSync(COOK_DIR, { recursive: true });
+
+function cutWhite(src, { enclosedMaxArea = 0.012 } = {}) {
+  const { img, d, w, h } = src;
+  const near = new Uint8Array(w * h);
+  for (let p = 0; p < w * h; p++) {
+    const i = p * 4;
+    near[p] = d[i] > 236 && d[i + 1] > 236 && d[i + 2] > 236 ? 1 : 0;
+  }
+  const kill = new Uint8Array(w * h);      // every pixel that becomes transparent
+  const seen = new Uint8Array(w * h);
+  const limit = enclosedMaxArea * w * h;
+  for (let start = 0; start < w * h; start++) {
+    if (!near[start] || seen[start]) continue;
+    // flood one near-white component
+    const comp = [];
+    let border = false;
+    const stack = [start];
+    seen[start] = 1;
+    while (stack.length) {
+      const p = stack.pop();
+      comp.push(p);
+      const x = p % w, y = (p - x) / w;
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) border = true;
+      const push = (q) => { if (near[q] && !seen[q]) { seen[q] = 1; stack.push(q); } };
+      if (x > 0) push(p - 1);
+      if (x < w - 1) push(p + 1);
+      if (y > 0) push(p - w);
+      if (y < h - 1) push(p + w);
+    }
+    if (border || comp.length > limit) for (const p of comp) kill[p] = 1;
+  }
+  // 1 px erosion of the kept silhouette so no white fringe survives
+  const keep = new Uint8Array(w * h);
+  for (let p = 0; p < w * h; p++) keep[p] = kill[p] ? 0 : 1;
+  const er = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const p = y * w + x;
+    if (!keep[p]) continue;
+    const up = y > 0 ? keep[p - w] : 0, dn = y < h - 1 ? keep[p + w] : 0;
+    const lf = x > 0 ? keep[p - 1] : 0, rt = x < w - 1 ? keep[p + 1] : 0;
+    er[p] = up && dn && lf && rt ? 1 : 0;
+  }
+  // bbox of what is left
+  let x0 = w, y0 = h, x1 = 0, y1 = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (!er[y * w + x]) continue;
+    if (x < x0) x0 = x; if (x > x1) x1 = x;
+    if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  const pad = 4;
+  const cx2 = Math.max(0, x0 - pad), cy2 = Math.max(0, y0 - pad);
+  const cw2 = Math.min(w, x1 + pad) - cx2, ch2 = Math.min(h, y1 + pad) - cy2;
+  const out = createCanvas(cw2, ch2);
+  const og2 = out.getContext('2d');
+  og2.drawImage(img, cx2, cy2, cw2, ch2, 0, 0, cw2, ch2);
+  const im = og2.getImageData(0, 0, cw2, ch2);
+  const od = im.data;
+  for (let y = 0; y < ch2; y++) for (let x = 0; x < cw2; x++) {
+    const a = er[(y + cy2) * w + (x + cx2)];
+    od[(y * cw2 + x) * 4 + 3] = a ? 255 : 0;
+  }
+  og2.putImageData(im, 0, 0);
+  return { canvas: out, w: cw2, h: ch2 };
+}
+
+const cookMeta = [];
+for (const name of COOK) {
+  const raw = await read(`${SRC}/cook_${name}.jpg`);
+  const cutRes = cutWhite(raw);
+  await save(cutRes.canvas, `${COOK_DIR}/${name}.png`);
+
+  // normalise on the HEAD: measure the opaque span of the top 12% of rows, so the
+  // player can line every pose up on one head axis at one head size.
+  const cg2 = cutRes.canvas.getContext('2d');
+  const dd = cg2.getImageData(0, 0, cutRes.w, cutRes.h).data;
+  const band = Math.max(6, Math.round(cutRes.h * 0.12));
+  let hx0 = cutRes.w, hx1 = 0;
+  for (let y = 0; y < band; y++) for (let x = 0; x < cutRes.w; x++) {
+    if (dd[(y * cutRes.w + x) * 4 + 3] > 128) { if (x < hx0) hx0 = x; if (x > hx1) hx1 = x; }
+  }
+  const headW = Math.max(1, hx1 - hx0);
+  const headCX = (hx0 + hx1) / 2;
+  cookMeta.push({ name, w: cutRes.w, h: cutRes.h, headW, headCX });
+  console.error(`cook pose ${name} ${cutRes.w}x${cutRes.h} head ${headW}px @${headCX}`);
+}
+fs.writeFileSync(`${COOK_DIR}/poses.json`, JSON.stringify({ poses: cookMeta }, null, 2));
+console.error('cook pack done');

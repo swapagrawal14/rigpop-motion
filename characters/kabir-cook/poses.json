@@ -1,0 +1,39 @@
+{
+  "poses": [
+    {
+      "name": "packet",
+      "w": 620,
+      "h": 746,
+      "headW": 220,
+      "headCX": 374
+    },
+    {
+      "name": "break",
+      "w": 718,
+      "h": 754,
+      "headW": 219,
+      "headCX": 377.5
+    },
+    {
+      "name": "stir",
+      "w": 1102,
+      "h": 763,
+      "headW": 262,
+      "headCX": 543
+    },
+    {
+      "name": "masala",
+      "w": 732,
+      "h": 746,
+      "headW": 233,
+      "headCX": 419.5
+    },
+    {
+      "name": "taste",
+      "w": 686,
+      "h": 732,
+      "headW": 261,
+      "headCX": 365.5
+    }
+  ]
+}

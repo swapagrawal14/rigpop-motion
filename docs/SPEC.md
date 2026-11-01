@@ -333,3 +333,59 @@ between phrases and out of the way during them.
 
 Timing is cue-first: every line is placed on the beat, and the *visual* is written to match it —
 never the other way round.
+
+---
+
+## 12. "2 Baje Ki Maggi" v2 — making a character belong to the room
+
+The first cut had a floating bust in front of a photograph of a kitchen, a pot of nothing, and a
+warden who teleported in. Six fixes, all of them structural:
+
+### 12.1 Action is a pose pack, not a still with steam on it
+
+"Steam rising off nothing" is the tell. The cooking beat needed **drawings of cooking**: five
+generated action poses (open the packet → snap the noodles → stir → sprinkle masala → taste),
+cut and normalised on the head axis exactly like the walk cycle. Then the *pot* is drawn in code
+so the noodles actually appear, cook and get stirred, and dry noodles visibly fall from his hands
+into it. Rule of thumb extended: **locomotion = flip-book, action = pose pack, conversation = cut-out.**
+
+### 12.2 Light-wrap the cast, or they will always look pasted
+
+Characters now render to their own transparent layer; a scene-coloured gradient plus a key light
+is stamped onto that layer with `source-atop`, and only then is it composited into the plate.
+Two extra stops of colour temperature is the difference between "in the room" and "on top of it".
+
+### 12.3 A foreground layer buys more depth than any background
+
+The same plate, scaled 6 % about the counter line and clipped below it, becomes a foreground
+counter. The actor is sandwiched between the plate and its own foreground copy — real parallax,
+real occlusion, and his cut-off waist stops being a bug. It also gives the shot an anchor for
+contact shadows and a place to hide the frame edge.
+
+### 12.4 Blocking beats entry
+
+She used to appear in the frame. Now: light under the door → her shadow thrown up the wall →
+her shape **resolving out of the silhouette** as she crosses → a hard cut to his face → her sniff →
+the push-in → the smile. Same five seconds, ten times the weight, and not one extra drawing —
+the silhouette is her own sprite with `source-atop` shade burned in.
+
+### 12.5 Keep characters on opposite sides of the frame
+
+Two busts at 0.74W and 0.72W is one character with a face problem. Whichever way the door is,
+the intruder crosses *to* the far side and the guilty party backs into the near one. Staging is
+cheaper than art.
+
+### 12.6 Everything gets a breath
+
+Every held pose now carries a slow 1.9 Hz sway and a hair of rotation. Nothing in the frame is
+ever a still image — which is what "static" actually means to an audience.
+
+### 12.7 Cook beat sheet
+
+| t | Pose | Also on screen |
+|---|---|---|
+| 22.5 | `packet` — tearing it open | match strike, burner glow |
+| 24.9 | `break` — snapping dry noodles | noodles falling into the pot, crinkle SFX |
+| 27.5 | `stir` — ladle in the kadhai | noodles cooking, steam puffs, boil SFX |
+| 29.5 | `masala` — pinching spice | spice specks falling |
+| 30.9 | `taste` — spoon to his mouth | the line, "mmm!" |

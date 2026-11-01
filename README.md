@@ -55,6 +55,12 @@ and camera**.
 <sub>**six drawings, one walk.** 6 poses × 5 frames @30fps = a 1.0 s cycle, background scroll
 matched to stride length so the feet never skate.</sub>
 
+<img src="docs/maggi.gif" width="420" alt="2 Baje Ki Maggi — cooking, the warden's entrance, the payoff">
+
+<sub>**five drawings, one dinner.** action is a pose pack too: open the packet → snap the
+noodles → stir → sprinkle masala → taste. Light-wrap, a foreground counter and a real entrance
+keep him inside the room instead of pasted onto it.</sub>
+
 ---
 
 ## 🚀 Quickstart
@@ -116,9 +122,9 @@ is generated from code in `src/chai-assets.mjs`. No samples, no licences.
 ### …and the 60-second one
 
 **`out/maggi-short.mp4`** — *“2 Baje Ki Maggi”*, a hostel comedy in seven shots: a title, a
-craving, a tiptoe down the corridor, a kitchen, a knock, a warden who smells the evidence, and a
-3 AM payoff. Two characters, three plates, one 60 s score that changes act, eleven voice lines
-and a lip-sync track per actor.
+craving, a tiptoe down the corridor, **him actually cooking the Maggi**, a knock, a warden who
+smells the evidence and arrives properly, and a 3 AM payoff. Two characters, three plates, five
+cooking poses, one 60 s score that changes act, eleven voice lines and a lip-sync track per actor.
 
 ```bash
 npm run maggi:prep    # cut the cast, derive mouth patches

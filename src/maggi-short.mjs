@@ -23,22 +23,22 @@ const M = P('assets/maggi');
 const LINES = JSON.parse(fs.readFileSync(`${M}/lines.json`, 'utf8'));
 const S = {
   cold: [0.0, 5.0],
-  room: [5.0, 14.0],
-  walk: [14.0, 24.0],
-  kitchen: [24.0, 34.0],
-  knock: [34.0, 43.0],
-  warden: [43.0, 52.0],
+  room: [5.0, 13.0],
+  walk: [13.0, 22.5],
+  kitchen: [22.5, 34.5],     // he actually cooks: packet → break → stir → masala → taste
+  knock: [34.5, 42.0],
+  warden: [42.0, 52.0],
   payoff: [52.0, 60.0],
 };
 const CUES = [
   { id: 'k1', at: 6.2, who: 'kabir' },
   { id: 'k2', at: 9.6, who: 'kabir' },
-  { id: 'k3', at: 17.6, who: 'kabir' },
-  { id: 'k4', at: 29.2, who: 'kabir' },
-  { id: 'w1', at: 36.0, who: 'warden' },
-  { id: 'k5', at: 40.2, who: 'kabir' },
-  { id: 'w2', at: 45.0, who: 'warden' },
-  { id: 'w3', at: 47.3, who: 'warden' },
+  { id: 'k3', at: 16.4, who: 'kabir' },
+  { id: 'k4', at: 30.8, who: 'kabir' },
+  { id: 'w1', at: 35.6, who: 'warden' },
+  { id: 'k5', at: 39.6, who: 'kabir' },
+  { id: 'w2', at: 45.4, who: 'warden' },
+  { id: 'w3', at: 47.6, who: 'warden' },
   { id: 'k6', at: 49.4, who: 'kabir' },
   { id: 'w4', at: 53.0, who: 'warden' },
   { id: 'k7', at: 55.2, who: 'kabir' },
@@ -46,17 +46,17 @@ const CUES = [
 const SUBS = [
   { id: 'k1', a: 6.2, who: 'kabir' },
   { id: 'k2', a: 9.6, who: 'kabir' },
-  { id: 'k3', a: 17.6, who: 'kabir', whisper: true },
-  { id: 'k4', a: 29.2, who: 'kabir' },
-  { id: 'w1', a: 36.0, who: 'warden', off: true },
-  { id: 'k5', a: 40.2, who: 'kabir' },
-  { id: 'w2', a: 45.0, who: 'warden' },
-  { id: 'w3', a: 47.3, who: 'warden' },
+  { id: 'k3', a: 16.4, who: 'kabir', whisper: true },
+  { id: 'k4', a: 30.8, who: 'kabir' },
+  { id: 'w1', a: 35.6, who: 'warden', off: true },
+  { id: 'k5', a: 39.6, who: 'kabir' },
+  { id: 'w2', a: 45.4, who: 'warden' },
+  { id: 'w3', a: 47.6, who: 'warden' },
   { id: 'k6', a: 49.4, who: 'kabir' },
   { id: 'w4', a: 53.0, who: 'warden' },
   { id: 'k7', a: 55.2, who: 'kabir' },
-  { id: 'x1', a: 13.0, b: 13.6, text: '(pet se: gurrrrr)' },
-  { id: 'x3', a: 42.2, b: 43.0, text: '...' },
+  { id: 'x1', a: 11.6, b: 12.2, text: '(pet se: gurrrrr)' },
+  { id: 'x3', a: 41.2, b: 42.0, text: '...' },
 ];
 const subOf = (c) => (c.text ? c.text : LINES[c.id].text);
 
@@ -81,6 +81,15 @@ for (const k of Object.keys(WMETA.patches)) A.wImgs[k] = await loadImage(P('char
 A.poses = [];
 for (let i = 0; i < 6; i++) A.poses.push(await loadImage(P(`characters/kabir-side/poses/pose_${i}.png`)));
 const POSES = JSON.parse(fs.readFileSync(P('characters/kabir-side/poses/poses.json'), 'utf8'));
+
+// the cooking pose pack: five drawings of him actually making the Maggi
+const COOK = {};
+{
+  const meta = JSON.parse(fs.readFileSync(P('characters/kabir-cook/poses.json'), 'utf8'));
+  for (const p of meta.poses) {
+    COOK[p.name] = { img: await loadImage(P(`characters/kabir-cook/${p.name}.png`)), ...p };
+  }
+}
 
 /* --------------------------------------------------------------- sound mix */
 function buildAudio() {
@@ -126,33 +135,42 @@ function buildAudio() {
   }
   for (let i = 0; i < N; i++) mix[i] += voice[i] * 1.0;
 
-  // ---- foley, cue-locked ----
+  // ---- foley, cue-locked to the new timeline ----
   add(sfx('buzz.wav'), 3.2, 0.5);
   add(sfx('growl.wav'), 4.3, 0.75);
-  add(sfx('growl.wav'), 11.5, 0.55);
-  add(decode(P('assets/chai/whoosh.wav')), 14.0, 0.35);
-  // footsteps: one per stride (stride = 1/3 s) across the walk, minus the freeze
+  add(sfx('growl.wav'), 11.0, 0.55);
+  add(decode(P('assets/chai/whoosh.wav')), 13.0, 0.35);
+  // footsteps: one per stride across the walk, minus the freeze
   const step = decode(P('assets/chai/step.wav'));
   for (let k = 0; ; k++) {
-    const at = 14.5 + k * 0.333;
-    if (at > 23.3) break;
-    if (at > 21.25 && at < 22.0) continue;   // he froze
+    const at = 13.5 + k * 0.333;
+    if (at > 21.8) break;
+    if (at > FREEZE[0] && at < FREEZE[1] + 0.2) continue;
     add(step, at, k % 2 ? 0.30 : 0.40);
   }
-  add(sfx('creak.wav'), 21.3, 0.85);
-  add(decode(P('assets/chai/whoosh.wav')), 24.0, 0.3);
-  add(sfx('match.wav'), 24.7, 0.6);
-  add(sfx('pour.wav'), 25.5, 0.5);
-  add(sfx('boil.wav'), 26.4, 0.5);
-  add(sfx('sprinkle.wav'), 27.7, 0.55);
-  add(sfx('clink.wav'), 29.0, 0.35);
-  add(sfx('boil.wav'), 31.2, 0.32);
-  add(sfx('knock.wav'), 35.0, 0.95);
-  add(sfx('knock.wav'), 35.9, 0.75);
-  add(sfx('clink.wav'), 41.3, 0.3);
-  add(sfx('door.wav'), 43.1, 0.6);
-  add(sfx('sniff.wav'), 44.5, 0.7);
-  add(sfx('sniff.wav'), 45.3, 0.45);
+  add(sfx('creak.wav'), FREEZE[0], 0.85);
+  add(decode(P('assets/chai/whoosh.wav')), 22.5, 0.3);
+  // he cooks: match → water → boil → crinkle → sprinkle
+  add(sfx('match.wav'), 23.0, 0.65);
+  add(sfx('pour.wav'), 23.7, 0.5);
+  add(sfx('boil.wav'), 24.5, 0.45);
+  add(sfx('sprinkle.wav'), 25.5, 0.55);     // noodles snapping
+  add(sfx('pour.wav'), 26.0, 0.30);
+  add(sfx('boil.wav'), 27.6, 0.40);
+  add(sfx('clink.wav'), 29.0, 0.3);         // ladle on the rim
+  add(sfx('sprinkle.wav'), 30.2, 0.5);      // masala
+  add(sfx('boil.wav'), 32.0, 0.32);
+  add(sfx('clink.wav'), 33.2, 0.28);
+  // the knock
+  add(sfx('knock.wav'), 35.6, 0.95);
+  add(sfx('knock.wav'), 36.4, 0.70);
+  add(sfx('clink.wav'), 41.0, 0.3);
+  // she arrives: door, two heavy steps, the hinge
+  add(sfx('door.wav'), 42.1, 0.55);
+  add(step, 42.55, 0.5);
+  add(step, 43.05, 0.42);
+  add(sfx('sniff.wav'), 45.0, 0.7);
+  add(sfx('sniff.wav'), 45.9, 0.45);
   add(sfx('clink.wav'), 52.3, 0.45);
   add(sfx('clink.wav'), 53.4, 0.3);
   add(decode(P('assets/chai/slurp.wav')), 54.6, 0.7);
@@ -219,13 +237,17 @@ function cover(g, img, { zoom = 1, panX = 0, panY = 0, focusX = 0.5, focusY = 0.
 }
 
 // ---- character busts -------------------------------------------------------
-function bust(g, { img, patches, imgs, cx, bottom, height, talk, mouth, blink, extras = [], rot = 0, alpha = 1 }) {
+function bust(g, { img, patches, imgs, cx, bottom, height, talk, mouth, blink, extras = [], rot = 0, alpha = 1, t = 0, idle = 0, phase = 0 }) {
   const s = height / img.height;
   const dw = img.width * s, dh = img.height * s;
-  const x = cx - dw / 2, y = bottom - dh;
+  // breathing: a couple of pixels of sway and a hair of scale, so a held pose is never dead
+  const breath = idle ? Math.sin(t * 1.9 + phase) * 3.2 * idle : 0;
+  const breathX = idle ? Math.sin(t * 1.1 + phase) * 2.0 * idle : 0;
+  const x = cx - dw / 2 + breathX, y = bottom - dh + breath;
   g.save();
   g.globalAlpha = alpha;
-  if (rot) { g.translate(cx, bottom - dh / 2); g.rotate(rot); g.translate(-cx, -(bottom - dh / 2)); }
+  const totalRot = rot + (idle ? Math.sin(t * 0.9 + phase) * 0.004 * idle : 0);
+  if (totalRot) { g.translate(cx, bottom - dh / 2); g.rotate(totalRot); g.translate(-cx, -(bottom - dh / 2)); }
   g.drawImage(img, x, y, dw, dh);
   for (const k of extras) {
     const p = patches[k];
@@ -439,19 +461,181 @@ function clock(g, t, x, y, alpha = 1) {
 
 // All world drawing must happen inside withCam(): the transform is always restored,
 // so nothing leaks into the next frame. (That leak cost an hour once — see SPEC §11.)
-function withCam(gg, { zoom = 1, cx = W / 2, cy = H / 2, dx = 0, dy = 0, shake = 0 }, fn) {
-  gg.save();
+function applyCam(gg, cam) {
+  const { zoom = 1, cx = W / 2, cy = H / 2, dx = 0, dy = 0, shake = 0 } = cam || {};
   if (shake) gg.translate(Math.sin(shake * 71) * 6, Math.cos(shake * 53) * 4);
   gg.translate(W / 2 + dx, H / 2 + dy);
   gg.scale(zoom, zoom);
   gg.translate(-cx, -cy);
+}
+function withCam(gg, cam, fn) {
+  gg.save();
+  applyCam(gg, cam);
   fn();
+  gg.restore();
+}
+
+/* ---------------------------------------------------------------- cast layer */
+// Characters are drawn on their own transparent layer, then a scene-coloured light
+// is stamped *only onto them* with source-atop before they are composited down.
+// That single step is what stops a bust from looking pasted onto a photograph of a room.
+const castLayer = createCanvas(W, H);
+const castCtx = castLayer.getContext('2d');
+function drawCast(drawFn, { cam, light } = {}) {
+  castCtx.setTransform(1, 0, 0, 1, 0, 0);
+  castCtx.clearRect(0, 0, W, H);
+  withCam(castCtx, cam, drawFn);
+  if (light) {
+    castCtx.save();
+    castCtx.setTransform(1, 0, 0, 1, 0, 0);
+    castCtx.globalCompositeOperation = 'source-atop';
+    if (light.shade) {
+      const lg = castCtx.createLinearGradient(0, 0, 0, H);
+      lg.addColorStop(0, light.shade[0]);
+      lg.addColorStop(1, light.shade[1]);
+      castCtx.fillStyle = lg;
+      castCtx.fillRect(0, 0, W, H);
+    }
+    if (light.key) {
+      const rg = castCtx.createRadialGradient(light.key.x, light.key.y, 10, light.key.x, light.key.y, light.key.r);
+      rg.addColorStop(0, light.key.color);
+      rg.addColorStop(1, 'rgba(0,0,0,0)');
+      castCtx.fillStyle = rg;
+      castCtx.fillRect(0, 0, W, H);
+    }
+    castCtx.restore();
+  }
+  g.drawImage(castLayer, 0, 0);
+}
+const LIGHT = {
+  room:   { shade: ['rgba(40,70,140,0.30)', 'rgba(10,18,45,0.45)'], key: { x: W * 0.5, y: H * 0.86, r: 430, color: 'rgba(150,205,255,0.30)' } },
+  kitchen:{ shade: ['rgba(255,178,90,0.16)', 'rgba(40,28,20,0.30)'], key: { x: W * 0.34, y: H * 0.16, r: 620, color: 'rgba(255,205,120,0.34)' } },
+  fright: { shade: ['rgba(20,40,90,0.42)', 'rgba(6,10,28,0.55)'], key: { x: W - 40, y: H * 0.5, r: 420, color: 'rgba(255,205,120,0.26)' } },
+  warm:   { shade: ['rgba(255,190,110,0.18)', 'rgba(60,34,20,0.28)'], key: { x: W * 0.5, y: H * 0.22, r: 700, color: 'rgba(255,205,120,0.30)' } },
+};
+
+
+/* ------------------------------------------------- cooking props & staging */
+// Our kadhai is drawn, not photographed: noodles actually appear, cook and get stirred.
+function kadhai(g, x, y, w, { noodles = 0, t = 0, steamOn = true, flame = true } = {}) {
+  const h = w * 0.52;
+  g.save();
+  g.translate(x, y);
+  if (flame) {
+    const fg2 = g.createRadialGradient(0, 10, 4, 0, 10, w * 0.55);
+    fg2.addColorStop(0, 'rgba(255,170,70,0.55)');
+    fg2.addColorStop(1, 'rgba(255,140,50,0)');
+    g.fillStyle = fg2;
+    g.beginPath(); g.ellipse(0, 12, w * 0.55, h * 0.30, 0, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(120,190,255,0.8)';
+    g.lineWidth = 4; g.lineCap = 'round';
+    for (let i = 0; i < 6; i++) {
+      const a = -1.0 + i * 0.4 + Math.sin(t * 10 + i) * 0.06;
+      g.beginPath();
+      g.moveTo(Math.cos(a) * w * 0.20, Math.sin(a) * h * 0.10 + 6);
+      g.lineTo(Math.cos(a) * w * 0.30, Math.sin(a) * h * 0.16 + 2);
+      g.stroke();
+    }
+  }
+  // body
+  g.beginPath();
+  g.moveTo(-w / 2, 0);
+  g.quadraticCurveTo(-w * 0.42, h * 0.95, 0, h);
+  g.quadraticCurveTo(w * 0.42, h * 0.95, w / 2, 0);
+  g.closePath();
+  const bg2 = g.createLinearGradient(-w / 2, 0, w / 2, h);
+  bg2.addColorStop(0, '#4a4f57');
+  bg2.addColorStop(0.45, '#2e333a');
+  bg2.addColorStop(1, '#1b1e23');
+  g.fillStyle = bg2; g.fill();
+  ink(g, Math.max(4, w * 0.028)); g.stroke();
+  // noodles inside
+  g.beginPath();
+  g.ellipse(0, -h * 0.02, w * 0.47, h * 0.20, 0, 0, TAU);
+  g.fillStyle = '#2a2018'; g.fill(); ink(g, Math.max(3, w * 0.02)); g.stroke();
+  if (noodles > 0.01) {
+    g.save();
+    g.beginPath(); g.ellipse(0, -h * 0.02, w * 0.44, h * 0.17, 0, 0, TAU); g.clip();
+    g.fillStyle = '#e8b53f';
+    g.beginPath(); g.ellipse(0, -h * 0.02, w * 0.46, h * 0.20 * noodles, 0, 0, TAU); g.fill();
+    g.strokeStyle = '#c9902a'; g.lineWidth = Math.max(3, w * 0.022);
+    const strands = 9;
+    for (let i = 0; i < strands; i++) {
+      g.beginPath();
+      for (let k = 0; k <= 10; k++) {
+        const u = k / 10;
+        const xx = -w * 0.44 + u * w * 0.88;
+        const yy = -h * 0.16 + i * h * 0.032 + Math.sin(u * 8 + i * 1.7 + t * (1 + (i % 3) * 0.6)) * 4;
+        if (k === 0) g.moveTo(xx, yy); else g.lineTo(xx, yy);
+      }
+      g.stroke();
+    }
+    // a few red masala flecks
+    g.fillStyle = '#b7331f';
+    for (let i = 0; i < 14; i++) {
+      const a2 = i * 2.399;
+      g.beginPath();
+      g.arc(Math.cos(a2) * w * 0.30, -h * 0.05 + Math.sin(a2) * h * 0.09, 2.4, 0, TAU);
+      g.fill();
+    }
+    g.restore();
+  }
+  // rim + handles
+  g.beginPath(); g.ellipse(0, 0, w / 2, h * 0.18, 0, 0, TAU);
+  g.strokeStyle = INK; g.lineWidth = Math.max(5, w * 0.035); g.stroke();
+  g.strokeStyle = '#6b7178'; g.lineWidth = Math.max(2, w * 0.014); g.stroke();
+  for (const sx of [-1, 1]) {
+    g.beginPath();
+    g.arc(sx * w * 0.52, -h * 0.02, w * 0.075, sx > 0 ? -1.4 : 1.75, sx > 0 ? 1.4 : 4.5);
+    g.strokeStyle = INK; g.lineWidth = Math.max(5, w * 0.03); g.stroke();
+    g.strokeStyle = '#5e646b'; g.lineWidth = Math.max(2, w * 0.012); g.stroke();
+  }
+  // steam
+  if (steamOn && noodles > 0.01) steam(g, -w * 0.10, -h * 0.22, w / 260, t, 0.34, 3);
+  g.restore();
+}
+
+// the counter between the camera and the actor: the same plate, pushed 5% closer,
+// clipped below the counter line. Depth for free, and it hides the actor's cut-off.
+function foregroundCounter(gg, cam, lineY, k = 1.06, plate = null) {
+  const img = plate || A.kitchen;
+  gg.save();
+  withCam(gg, cam, () => {
+    gg.beginPath();
+    gg.rect(-W, lineY, W * 3, H * 3);
+    gg.clip();
+    gg.save();
+    gg.translate(W * 0.5, lineY);
+    gg.scale(k, k);
+    gg.translate(-W * 0.5, -lineY);
+    cover(gg, img, { focusY: 0.5 });
+    gg.restore();
+    const sh = gg.createLinearGradient(0, lineY, 0, lineY + 110);
+    sh.addColorStop(0, 'rgba(8,6,12,0.62)');
+    sh.addColorStop(1, 'rgba(8,6,12,0)');
+    gg.fillStyle = sh;
+    gg.fillRect(-W, lineY, W * 3, 110);
+  });
+  gg.restore();
+}
+
+// draw a cooking pose normalised on the head axis, with a little life in it
+function cookPose(gg, name, { cx, headW = 168, top = H * 0.15, t = 0, breathe = 1, lean = 0 }) {
+  const p = COOK[name];
+  if (!p) return;
+  const sc = headW / p.headW;
+  const dw = p.w * sc, dh = p.h * sc;
+  const bob = Math.sin(t * 2.1) * 2.2 * breathe;
+  gg.save();
+  gg.translate(cx - p.headCX * sc, top + bob);
+  if (lean) { gg.translate(dw * 0.5, dh); gg.rotate(lean); gg.translate(-dw * 0.5, -dh); }
+  gg.drawImage(p.img, 0, 0, dw, dh);
   gg.restore();
 }
 
 /* ------------------------------------------------------------------- shots */
 // shared walk-clock with a freeze window (the floorboard gag)
-const FREEZE = [21.25, 21.95];
+const FREEZE = [19.9, 20.6];
 function walkClock(t) {
   const start = S.walk[0] + 0.5;
   let c = t - start;
@@ -489,6 +673,7 @@ function drawKabir(gg, o) {
     talk: o.talk, mouth: o.mouth, blink: o.blink, extras: o.extras || [],
     rot: o.rot || 0, alpha: o.alpha ?? 1,
     cx: o.cx, bottom: o.bottom, height: o.height,
+    t: o.t || 0, idle: o.idle || 0, phase: o.phase || 0,
   });
 }
 function drawWarden(gg, o) {
@@ -497,6 +682,7 @@ function drawWarden(gg, o) {
     talk: o.talk, mouth: o.mouth, blink: o.blink, extras: o.smile ? ['smile'] : [],
     rot: o.rot || 0, alpha: o.alpha ?? 1,
     cx: o.cx, bottom: o.bottom, height: o.height,
+    t: o.t || 0, idle: o.idle || 0, phase: o.phase || 0,
   });
 }
 
@@ -517,10 +703,11 @@ function render(t) {
       cover(g, A.room, { focusY: 0.5 });
       if (t >= 2.9) {
         const up = smooth(clamp((t - 2.9) / 0.55, 0, 1));
-        drawKabir(g, {
+        drawCast(() => drawKabir(g, {
           cx: W * 0.5, bottom: H + 240 + (1 - up) * 340, height: 980,
           talk: !!kM, mouth: kM, blink: blinkOf(t, 0.7), alpha: 0.55 + 0.45 * up,
-        });
+          t, idle: 1, phase: 0.4,
+        }), { cam: { zoom: 1.02 + t * 0.008, cy: H * 0.54 }, light: LIGHT.room });
       }
     });
     g.fillStyle = `rgba(10,14,34,${0.62 - smooth(clamp((t - 2.9) / 1.4, 0, 1)) * 0.22})`;
@@ -573,10 +760,10 @@ function render(t) {
         packet(g, W * 0.46, H * 0.31 + bob, 94, Math.sin(t * 0.9) * 0.09, t);
         g.restore();
       }
-      drawKabir(g, {
+      drawCast(() => drawKabir(g, {
         cx: W * 0.5, bottom: H + 240, height: 980,
-        talk: !!kM, mouth: kM, blink: blinkOf(t, 0.7),
-      });
+        talk: !!kM, mouth: kM, blink: blinkOf(t, 0.7), t, idle: 1, phase: 0.4,
+      }), { cam: { zoom: 1.05 + s * 0.012, cy: H * 0.50 }, light: LIGHT.room });
     });
     g.fillStyle = `rgba(12,16,38,${0.40 - s * 0.012})`;
     g.fillRect(0, 0, W, H);
@@ -626,7 +813,7 @@ function render(t) {
       const fg = g.createLinearGradient(0, plateY + plateH - 8, 0, H + 40);
       fg.addColorStop(0, '#4a5a53');
       fg.addColorStop(0.30, '#31403c');
-      fg.addColorStop(1, '#12191b');
+      fg.addColorStop(1, '#1b2528');
       g.fillStyle = fg;
       g.fillRect(-W, plateY + plateH - 8, W * 3, H + 200);
 
@@ -646,13 +833,16 @@ function render(t) {
       const img = A.poses[poseIdx];
       const dw = img.width * sc, dh = img.height * sc;
       const cx0 = W * 0.42;
+      // contact shadow first, so his feet sit on the corridor floor
       g.save();
-      g.globalAlpha = 0.38;
+      g.globalAlpha = 0.42;
       g.fillStyle = '#000';
       g.beginPath(); g.ellipse(cx0, footY, dw * 0.30, 13, 0, 0, TAU); g.fill();
       g.restore();
       g.drawImage(img, cx0 - dw / 2, footY - dh, dw, dh);
-    });
+    }, { cam: { zoom: 1, shake: frozen ? Math.min(0.4, t - FREEZE[0]) : 0 },
+         light: { shade: ['rgba(30,60,120,0.16)', 'rgba(6,10,22,0.34)'],
+                  key: { x: W * 0.5, y: H * 0.12, r: 520, color: 'rgba(180,255,220,0.16)' } } });
 
     g.fillStyle = 'rgba(8,12,26,0.40)'; g.fillRect(0, 0, W, H);
     if (frozen) {
@@ -673,157 +863,268 @@ function render(t) {
     }
   }
 
-  /* ============================ SHOT 3 · the kitchen ======================= */
+  /* ============================ SHOT 3 · he actually cooks ================= */
   else if (t < S.kitchen[1]) {
     const s = t - S.kitchen[0];
-    const zoom = 1.0 + smooth(clamp(s / 9, 0, 1)) * 0.10;
-    const bx = W * 0.704, by = H * 0.494;      // the kadhai on the right burner
-    withCam(g, { zoom, cy: H * 0.62 }, () => {
+    // beat sheet: he opens the packet, breaks the noodles in, stirs, adds masala, tastes
+    const BEATS = [
+      ['packet', 0.0, 2.4],
+      ['break', 2.4, 5.0],
+      ['stir', 5.0, 7.0],
+      ['masala', 7.0, 8.4],
+      ['taste', 8.4, 99],
+    ];
+    const beat = BEATS.find((b) => s >= b[1] && s < b[2]);
+    const pose = beat ? beat[0] : 'taste';
+    const cam = { zoom: 1.0 + smooth(clamp(s / 11, 0, 1)) * 0.09, cy: H * 0.60 };
+    const POT = { x: W * 0.665, y: H * 0.522, w: 176 };
+    const noodles = smooth(clamp((s - 3.1) / 2.0, 0, 1));
+
+    // world: background + the heat under the pot
+    withCam(g, cam, () => {
       cover(g, A.kitchen, { focusY: 0.5 });
-      if (s > 0.6) burner(g, bx, by + 6, 1.0, t);
-      if (s > 1.6) steam(g, bx, by - 52, 1.05, t, 0.34 + 0.22 * clamp((s - 1.6) / 3, 0, 1), 4);
-      if (s > 3.4 && s < 5.2) {
-        const fadeA = clamp((s - 3.4) / 0.2, 0, 1) * clamp((5.2 - s) / 0.4, 0, 1);
-        for (let i = 0; i < 26; i++) {
-          const ph = (t * 1.5 + i * 0.37) % 1;
-          const px = bx - 58 + ((i * 37) % 116) + Math.sin(i) * 6;
-          const py = by - 230 + ph * 170;
-          g.globalAlpha = fadeA * (1 - ph) * 0.95;
-          g.fillStyle = i % 3 ? '#b4551f' : '#7a2f10';
-          g.beginPath(); g.arc(px, py, 3.4, 0, TAU); g.fill();
-        }
-        g.globalAlpha = 1;
+      if (s > 0.4) {
+        const hg = g.createRadialGradient(POT.x, POT.y - 10, 10, POT.x, POT.y - 10, 250);
+        hg.addColorStop(0, 'rgba(255,180,90,0.30)');
+        hg.addColorStop(1, 'rgba(255,180,90,0)');
+        g.fillStyle = hg;
+        g.fillRect(POT.x - 260, POT.y - 260, 520, 520);
       }
-      drawKabir(g, {
-        cx: W * 0.26, bottom: H + 290, height: 780,
-        talk: !!kM, mouth: kM, blink: blinkOf(t, 1.5),
-      });
     });
-    g.fillStyle = 'rgba(8,10,26,0.18)';
-    g.fillRect(0, 0, W, H);
-    if (s > 5.2 && s < 6.4) {
-      screen = () => {
-        const a = clamp((s - 5.2) / 0.25, 0, 1) * clamp((6.4 - s) / 0.3, 0, 1);
-        g.save(); g.globalAlpha = a * 0.9;
-        textPop(g, 'mmm!', W * 0.30, H * 0.40, 52, '#ffd94a', 0.12);
+
+    // the cast, lit by that bulb above him
+    const slideIn = smooth(clamp(s / 0.55, 0, 1));
+    drawCast(() => {
+      cookPose(g, pose, {
+        cx: lerp(-120, W * 0.615, slideIn),
+        headW: 158,
+        top: H * 0.165,
+        t,
+        breathe: pose === 'stir' ? 1.4 : 1,
+        lean: pose === 'stir' ? Math.sin(t * 6.2) * 0.018 : pose === 'break' ? Math.sin(t * 9) * 0.02 : 0,
+      });
+    }, { cam, light: LIGHT.kitchen });
+
+    // the pot goes in front of him: he is behind the counter, the kadhai is not
+    withCam(g, cam, () => {
+      g.save();
+      g.globalAlpha = 0.34;
+      g.fillStyle = '#120c08';
+      g.beginPath();
+      g.ellipse(POT.x, POT.y + POT.w * 0.50, POT.w * 0.52, POT.w * 0.09, 0, 0, TAU);
+      g.fill();
+      g.restore();
+      kadhai(g, POT.x, POT.y, POT.w, { noodles, t });
+      // dry noodles falling in when he snaps them
+      if (s > 2.5 && s < 4.4) {
+        const a = clamp((s - 2.5) / 0.2, 0, 1) * clamp((4.4 - s) / 0.5, 0, 1);
+        g.save();
+        g.globalAlpha = a;
+        g.strokeStyle = '#f0cf6a'; g.lineWidth = 5; g.lineCap = 'round';
+        for (let i = 0; i < 7; i++) {
+          const ph = (s * 1.6 + i * 0.29) % 1;
+          const px = POT.x - 46 + i * 15 + Math.sin(ph * 6 + i) * 8;
+          const py = POT.y - 200 + ph * 190;
+          g.beginPath();
+          for (let k = 0; k < 6; k++) {
+            const yy = py + k * 7;
+            const xx = px + Math.sin(k * 1.1 + i) * 5 + ph * 14;
+            if (k === 0) g.moveTo(xx, yy); else g.lineTo(xx, yy);
+          }
+          g.stroke();
+        }
         g.restore();
-      };
-    }
+      }
+    });
+
+    // the counter edge, closer to camera
+    foregroundCounter(g, cam, H * 0.615);
+    // the plate's floor sits in near-black; a whisper of warm bounce lifts it
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    const lift = g.createLinearGradient(0, H * 0.82, 0, H);
+    lift.addColorStop(0, 'rgba(0,0,0,0)');
+    lift.addColorStop(1, 'rgba(70,52,34,0.32)');
+    g.fillStyle = lift;
+    g.fillRect(0, H * 0.82, W, H * 0.18);
+    g.restore();
+
+    g.fillStyle = 'rgba(8,10,26,0.14)';
+    g.fillRect(0, 0, W, H);
+
+    screen = () => {
+      if (s > 8.6 && s < 9.9) {
+        const a = clamp((s - 8.6) / 0.25, 0, 1) * clamp((9.9 - s) / 0.3, 0, 1);
+        g.save(); g.globalAlpha = a * 0.92;
+        textPop(g, 'mmm!', W * 0.40, H * 0.34, 54, '#ffd94a', 0.1);
+        g.restore();
+      }
+    };
   }
 
   /* ============================ SHOT 4 · the knock ========================= */
   else if (t < S.knock[1]) {
     const s = t - S.knock[0];
-    const zoom = 1.04 + smooth(clamp((s - 1.0) / 6, 0, 1)) * 0.12;
+    const zoom = 1.06 + smooth(clamp((s - 0.8) / 5, 0, 1)) * 0.10;
     const shakeT = s > 1.0 && s < 1.9 ? Math.sin(s * 62) * (1.9 - s) * 5 : 0;
-    const bx = W * 0.704, by = H * 0.494;
-    withCam(g, { zoom, cy: H * 0.58, dx: shakeT }, () => {
+    const cam = { zoom, cy: H * 0.58, dx: shakeT };
+
+    withCam(g, cam, () => {
       cover(g, A.kitchen, { focusY: 0.46 });
-      if (s > 0.0) burner(g, bx, by + 6, 0.8, t);
-      if (s > 0.0) steam(g, bx, by - 52, 0.9, t, 0.26, 3);
-      drawKabir(g, {
-        cx: W * 0.52, bottom: H + 300, height: 1000,
-        talk: !!kM, mouth: kM, blink: blinkOf(t, 2.2),
-      });
-      // the bowl he is hiding, peeking out behind his shoulder
-      if (s > 7.0) {
-        const pop = smooth(clamp((s - 7.0) / 0.35, 0, 1));
+      const POT = { x: W * 0.665, y: H * 0.522, w: 172 };
+      kadhai(g, POT.x, POT.y, POT.w, { noodles: 1, t, flame: true });
+    });
+
+    // he freezes mid-stir with the ladle still in his hand
+    drawCast(() => {
+      cookPose(g, 'stir', { cx: W * 0.54, headW: 172, top: H * 0.14, t, breathe: 0.4, lean: 0 });
+    }, { cam, light: LIGHT.fright });
+
+    withCam(g, cam, () => {
+      // the bowl he is hiding, peeking from behind his shoulder
+      if (s > 6.2) {
+        const pop = smooth(clamp((s - 6.2) / 0.35, 0, 1));
         g.save();
-        g.translate(W * 0.855, H * 0.82);
+        g.translate(W * 0.80, H * 0.70);
         g.rotate(0.16);
-        bowl(g, 0, 0, 152 * pop, t, { level: 1 });
+        bowl(g, 0, 0, 148 * pop, t, { level: 1 });
         g.restore();
       }
     });
-    g.fillStyle = 'rgba(5,7,20,0.60)';
+
+    g.fillStyle = 'rgba(5,7,20,0.58)';
     g.fillRect(0, 0, W, H);
-    // the corridor light creeping in from the doorway at frame right
-    const lw = clamp((s - 0.9) / 1.2, 0, 1);
+
+    // the corridor light creeping under/around the door at frame right
+    const lw = clamp((s - 0.5) / 1.0, 0, 1);
     if (lw > 0.01) {
-      const lg = g.createLinearGradient(W, 0, W - 230, 0);
+      const lg = g.createLinearGradient(W, 0, W - 240, 0);
       lg.addColorStop(0, `rgba(255,206,124,${0.62 * lw})`);
       lg.addColorStop(0.55, `rgba(255,190,110,${0.20 * lw})`);
       lg.addColorStop(1, 'rgba(255,190,110,0)');
       g.fillStyle = lg;
-      g.fillRect(W - 240, 0, 240, H);
-      // a hard shaft edge so it reads as a door, not a gradient
-      g.fillStyle = `rgba(255,225,170,${0.16 * lw})`;
-      g.fillRect(W - 118, 0, 6, H);
+      g.fillRect(W - 250, 0, 250, H);
     }
+
     screen = () => {
-      if (s > 2.0 && s < 2.7) {
-        const a = clamp((s - 2.0) / 0.12, 0, 1) * clamp((2.7 - s) / 0.25, 0, 1);
+      if (s > 0.9 && s < 1.5) {
+        const a = clamp((s - 0.9) / 0.12, 0, 1) * clamp((1.5 - s) / 0.25, 0, 1);
         g.save(); g.globalAlpha = a;
-        textPop(g, '!', W * 0.68, H * 0.30, 96, '#ffd94a', 0.08);
+        textPop(g, '!', W * 0.70, H * 0.22, 92, '#ffd94a', 0.08);
         g.restore();
       }
-      for (const [at, i] of [[1.0, 0], [1.17, 1], [1.34, 2]]) {
-        if (s > at && s < at + 0.55) {
-          const a = 1 - (s - at) / 0.55;
+      for (const [at, i] of [[1.1, 0], [1.28, 1], [1.46, 2]]) {
+        if (s > at && s < at + 0.5) {
+          const a = 1 - (s - at) / 0.5;
           g.save(); g.globalAlpha = a;
-          textPop(g, 'THUD!', W * 0.74 - i * 8, H * 0.30 + i * 34, 52 - i * 4, '#ff7a5c', -0.1 + i * 0.06);
+          textPop(g, 'THUD!', W * 0.78 - i * 8, H * 0.26 + i * 32, 50 - i * 4, '#ff7a5c', -0.1 + i * 0.06);
           g.restore();
         }
       }
     };
   }
 
-  /* ============================ SHOT 5 · the warden ======================== */
+  /* ============================ SHOT 5 · the warden arrives ================ */
   else if (t < S.warden[1]) {
     const s = t - S.warden[0];
-    const push = smooth(clamp((s - 2.4) / 0.8, 0, 1)) * (1 - smooth(clamp((s - 4.1) / 0.9, 0, 1)));
-    const zoom = 1.03 + push * 0.52;
-    const focusX = lerp(0.5, 0.33, push);
-    const focusY = lerp(0.50, 0.62, push);
 
-    withCam(g, { zoom, cx: W * focusX, cy: H * focusY }, () => {
+    // beats: light under the door → her shape resolves out of it → she crosses the room
+    // → a hard cut to his face → sniff → the push-in → the smile
+    const reaction = s > 2.05 && s < 2.85;
+    const push = smooth(clamp((s - 4.4) / 0.8, 0, 1)) * (1 - smooth(clamp((s - 5.7) / 0.9, 0, 1)));
+    const cam = reaction
+      ? { zoom: 1.34, cx: W * 0.5, cy: H * 0.46 }
+      : { zoom: 1.03 + push * 0.46, cx: W * lerp(0.5, 0.72, push), cy: H * lerp(0.52, 0.64, push) };
+
+    const walkIn = smooth(clamp((s - 0.35) / 1.15, 0, 1));
+    const wardenX = reaction ? W + 420 : lerp(W * 1.02, W * 0.72, walkIn);
+    const stepBob = (s > 0.35 && s < 1.7) ? -Math.abs(Math.sin((s - 0.35) * Math.PI * 3.0)) * 7 : 0;
+    // she resolves out of the doorway light: 0 = pure silhouette, 1 = fully lit
+    const sil = clamp((s - 0.4) / 1.1, 0, 1);
+
+    withCam(g, cam, () => {
       cover(g, A.kitchen, { focusY: 0.46 });
-      // Kabir, small and guilty, on the right
-      drawKabir(g, {
-        cx: lerp(W * 0.82, W * 0.79, clamp(s / 1.0, 0, 1)), bottom: H + 240, height: 780,
-        talk: !!kM, mouth: kM, blink: blinkOf(t, 2.2),
-      });
-      // the warden walks in
-      const slide = smooth(clamp((s - 0.15) / 0.75, 0, 1));
-      const sniffing = s > 1.3 && s < 2.3;
-      drawWarden(g, {
-        cx: lerp(W + 340, W * 0.32, slide), bottom: H + 250, height: 860,
-        talk: !!wM, mouth: wM, blink: blinkOf(t, 0.3), smile: s > 4.2,
-        rot: sniffing ? Math.sin((s - 1.3) * 5) * 0.02 : 0,
-      });
+      // the doorway throws her shadow up the wall before she is readable
+      if (s > 0.2 && s < 2.0) {
+        const a = clamp((s - 0.2) / 0.45, 0, 1) * clamp((2.0 - s) / 0.6, 0, 1);
+        g.save();
+        g.globalAlpha = a * 0.42;
+        g.fillStyle = '#08080f';
+        g.beginPath();
+        const sx = lerp(W * 1.02, W * 0.68, walkIn);
+        g.ellipse(sx + 74, H * 0.42, 62, 175, 0.22, 0, TAU);
+        g.fill();
+        g.restore();
+      }
     });
 
-    g.fillStyle = `rgba(6,8,22,${0.54 - clamp((s - 4.4) / 1.2, 0, 1) * 0.24})`;
+    // cast layer: her, then him
+    drawCast(() => {
+      if (!reaction) {
+        const shadeA = lerp(0.94, 0.28, sil);
+        bust(g, {
+          img: A.warden, patches: wPatchArr, imgs: A.wImgs,
+          cx: wardenX, bottom: H + 250 + stepBob, height: 860,
+          talk: !!wM, mouth: wM, blink: blinkOf(t, 0.3), extras: s > 5.3 ? ['smile'] : [],
+          rot: (s > 3.0 && s < 4.0) ? Math.sin((s - 3.0) * 4.6) * 0.022 : 0,
+          t, idle: 1, phase: 1.1,
+        });
+        // hard shade for the silhouette phase, burned in on top of her only
+        if (sil < 0.98) {
+          const cw2 = castLayer.width, ch2 = castLayer.height;
+          castCtx.save();
+          castCtx.globalCompositeOperation = 'source-atop';
+          castCtx.fillStyle = `rgba(6,8,18,${shadeA})`;
+          castCtx.fillRect(0, 0, cw2, ch2);
+          castCtx.restore();
+        }
+      }
+      bust(g, {
+        img: A.kabir, patches: A.kPatch, imgs: A.kImgs,
+        cx: reaction ? W * 0.5 : W * 0.26,
+        bottom: reaction ? H + 260 : H + 210,
+        height: reaction ? 1020 : 720,
+        talk: !!kM, mouth: kM, blink: blinkOf(t, 2.2),
+        rot: (s > 3.2 && s < 4.0) ? Math.sin((s - 3.2) * 9) * 0.012 : 0,
+        t, idle: 1, phase: 0.2,
+      });
+    }, { cam, light: s > 5.4 ? LIGHT.warm : LIGHT.kitchen });
+
+    g.fillStyle = `rgba(6,8,22,${(reaction ? 0.42 : 0.52) - clamp((s - 5.7) / 1.2, 0, 1) * 0.26})`;
     g.fillRect(0, 0, W, H);
+
     screen = () => {
-      const warm = clamp((s - 4.4) / 1.4, 0, 1);
+      const warm = clamp((s - 5.7) / 1.4, 0, 1);
       if (warm > 0.01) {
-        const rg = g.createRadialGradient(W * 0.32, H * 0.52, 20, W * 0.32, H * 0.52, 520);
-        rg.addColorStop(0, `rgba(255,196,110,${0.30 * warm})`);
+        const rg = g.createRadialGradient(W * 0.32, H * 0.52, 20, W * 0.32, H * 0.52, 540);
+        rg.addColorStop(0, `rgba(255,196,110,${0.28 * warm})`);
         rg.addColorStop(1, 'rgba(255,196,110,0)');
         g.fillStyle = rg; g.fillRect(0, 0, W, H);
       }
-      // glasses glint before she softens
-      if (s > 3.9 && s < 4.5) {
-        const a = clamp((s - 3.9) / 0.15, 0, 1) * clamp((4.5 - s) / 0.25, 0, 1);
+      if (reaction) {
         g.save();
-        g.globalAlpha = a;
-        g.translate(W * 0.36, H * 0.44);
-        g.rotate(-0.5);
-        g.fillStyle = 'rgba(255,255,255,0.92)';
-        g.beginPath(); g.roundRect(-54, -6, 108, 12, 6); g.fill();
-        g.restore();
-      }
-      if (s > 1.3 && s < 2.3) {
-        const a = clamp(1 - Math.abs(s - 1.8) / 0.6, 0, 1);
-        g.save();
-        g.globalAlpha = a * 0.55;
-        g.strokeStyle = '#9fdcff'; g.lineWidth = 4; g.lineCap = 'round';
-        for (let i = 0; i < 2; i++) {
+        g.strokeStyle = 'rgba(159,220,255,0.55)';
+        g.lineWidth = 5; g.lineCap = 'round';
+        for (let i = 0; i < 7; i++) {
+          const a2 = -2.4 + i * 0.42;
           g.beginPath();
-          g.arc(W * 0.20, H * 0.72, 24 + i * 15, -0.7, 0.5);
+          g.moveTo(W * 0.5 + Math.cos(a2) * 196, H * 0.40 + Math.sin(a2) * 196);
+          g.lineTo(W * 0.5 + Math.cos(a2) * 238, H * 0.40 + Math.sin(a2) * 238);
           g.stroke();
         }
+        g.restore();
+      }
+      // the glasses glint: drawn in world space so the push-in carries it with her
+      if (s > 4.1 && s < 4.7) {
+        const a = clamp((s - 4.1) / 0.12, 0, 1) * clamp((4.7 - s) / 0.2, 0, 1);
+        g.save();
+        g.globalAlpha = a * (0.5 + 0.5 * warm);
+        withCam(g, cam, () => {
+          g.translate(wardenX - 34, H * 0.726);
+          g.rotate(-0.5);
+          g.fillStyle = 'rgba(255,255,255,0.92)';
+          g.beginPath(); g.roundRect(-52, -6, 104, 12, 6); g.fill();
+        });
         g.restore();
       }
     };
@@ -835,17 +1136,20 @@ function render(t) {
     const zoom = 1.08 - smooth(clamp(s / 6, 0, 1)) * 0.08;
     withCam(g, { zoom, cy: H * 0.55 }, () => {
       cover(g, A.kitchen, { focusY: 0.5 });
-      drawWarden(g, {
-        cx: W * 0.30, bottom: H + 120, height: 780,
-        talk: !!wM, mouth: wM, blink: blinkOf(t, 0.3), smile: true,
-      });
-      drawKabir(g, {
-        cx: W * 0.73, bottom: H + 150, height: 750,
-        talk: !!kM, mouth: kM, blink: blinkOf(t, 0.7),
-      });
+      drawCast(() => {
+        drawWarden(g, {
+          cx: W * 0.30, bottom: H + 120, height: 780,
+          talk: !!wM, mouth: wM, blink: blinkOf(t, 0.3), smile: true,
+          t, idle: 1, phase: 1.1,
+        });
+        drawKabir(g, {
+          cx: W * 0.73, bottom: H + 150, height: 750,
+          talk: !!kM, mouth: kM, blink: blinkOf(t, 0.7), t, idle: 1, phase: 0.2,
+        });
+      }, { cam: { zoom: 1.08 - smooth(clamp(s / 6, 0, 1)) * 0.08, cy: H * 0.55 }, light: LIGHT.warm });
       // two bowls, in front, still steaming
-      bowl(g, W * 0.34, H * 0.955, 190, t, { level: 1 });
-      bowl(g, W * 0.70, H * 0.975, 172, t + 0.6, { level: 1 });
+      bowl(g, W * 0.33, H * 0.905, 178, t, { level: 1 });
+      bowl(g, W * 0.70, H * 0.925, 162, t + 0.6, { level: 1 });
     });
     g.fillStyle = 'rgba(6,9,20,0.40)';
     g.fillRect(0, 0, W, H);
@@ -881,9 +1185,9 @@ function render(t) {
   /* ------------------------------------------------------- global grade */
   screen();
 
-  const v = g.createRadialGradient(W / 2, H * 0.46, H * 0.26, W / 2, H * 0.5, H * 0.82);
+  const v = g.createRadialGradient(W / 2, H * 0.46, H * 0.30, W / 2, H * 0.5, H * 0.86);
   v.addColorStop(0, 'rgba(0,0,0,0)');
-  v.addColorStop(1, 'rgba(8,6,18,0.50)');
+  v.addColorStop(1, 'rgba(8,6,18,0.38)');
   g.fillStyle = v;
   g.fillRect(0, 0, W, H);
 
