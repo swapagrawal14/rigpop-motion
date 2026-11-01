@@ -36,6 +36,8 @@ Write a short like a screenplay; get a 720×1280 reel with voices, captions and 
 
 <img src="docs/logo.png" width="88" align="right" alt="rigpop-motion logo">
 
+> **Agents and contributors:** read [AGENTS.md](AGENTS.md) first. The rule is pose first, motion second: generate drawn key poses, then animate smooth eased transitions between them. No puppet limb swings, no visible joints.
+
 ## 🧩 v3: hybrid image rig, auto-rig and pose packs
 
 v1 used whole AI paintings of a character, and a painting can't bend, so the shorts were stiff.
