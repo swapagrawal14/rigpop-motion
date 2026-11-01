@@ -389,3 +389,38 @@ ever a still image — which is what "static" actually means to an audience.
 | 27.5 | `stir` — ladle in the kadhai | noodles cooking, steam puffs, boil SFX |
 | 29.5 | `masala` — pinching spice | spice specks falling |
 | 30.9 | `taste` — spoon to his mouth | the line, "mmm!" |
+
+---
+
+## 13. v2 — "Midnight Maggi": rig in code, not stills (1 Nov 2026)
+
+v1 ke shorts motion comic the: painterly stills, mouth patch, slow zoom. Character hilta hi nahi tha.
+v2 mein **har cheez code se draw hoti hai** (`src/v2/`): flat-colour Indimation look, bold outline,
+flat fill, ek cel shadow. Isliye character asli mein *act* kar sakta hai.
+
+### 13.1 Rig
+- Parenting: ground → hip → torso → neck → head; shoulders → **2-bone IK** arms; hips → 2-bone IK legs.
+- IK ke do solutions mein se **pole target** ke paas wala chuno: elbows bahar, knees aage.
+- Limbs = rubber-hose strokes, round joins: joint pe seam khul hi nahi sakta, haath forearm se kabhi alag nahi.
+- Face: eye white + pupil + highlight + upper/lower lids, brows, 13 mouth shapes, 3/4 turn.
+
+### 13.2 Motion = layers
+locomotion → rest (counter / hanging + held props) → **action clips** (back-eased envelope =
+anticipation + overshoot) → **idle** (breath, sway, blinks, saccades: hamesha on) → **speech**
+(visemes from RMS + zero-crossing, head bob, brow lift). Characters **on twos**, camera + FX on ones.
+Fast hand = **smear frame**.
+
+### 13.3 Seekh (bugs jo pehle ship hue)
+1. **ECU mein camera ko head pe lock mat karo.** Lagged follow bhi head bob ko cancel kar deta hai,
+   laugh "static" lagta hai. Shot body ke rest pose pe frame karo, head ko frame ke andar hilne do.
+2. **Props aur haath same clock pe.** Character on twos aur pan jiggle on ones = haath handle se
+   phisalta hai. Jo cheez haath se judi hai, wo bhi quantised time pe evaluate karo.
+3. **Parallax sirf un layers pe jo kisi cheez ko chhoote nahi.** Counter ko 1.08x diya to pan
+   haath se khisak gaya. Parallax = sky, hallway, foreground ladles; set + characters ek hi plane.
+4. Caption stroke (10 px) word gap kha jaata hai: gap ≥ stroke + 12 px.
+5. Thandi pani se steam nahi uthti: steam = heat, content se nahi.
+
+### 13.4 Script
+Short ek markdown file hai (`scripts/midnight-maggi.md`): `[shot …]`, `[camera …]`, `[K stir 3s &]`,
+`K (happy): line`. Idle aur lip-sync engine khud chalata hai. Actions apne SFX khud cue karte hain.
+Render ≈ 20 fps (40 s reel ≈ 1 min).
