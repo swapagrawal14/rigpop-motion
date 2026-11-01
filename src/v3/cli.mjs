@@ -4,6 +4,7 @@
 //   rig <character> [--prompts]        auto-rig characters/<character> from its part sheets
 //   poses <character> <action> [--prompt]  cut + normalise a pose pack (jump, ...), then patch its faces
 //   faces <character> [pose]           re-cut blink + mouth patches for existing pose packs
+//   qa <character|script.md ...>       gate: does every pose key have a live face, no pops? (exit 1 on fail)
 //   render <script.md> [-o out.mp4] [--from s] [--to s] [--crf n]
 //   still  <script.md> [-t 1,2] [-o dir] | --sheet 2 [-o sheet.jpg]
 //   strip  <script.md> -t 30.1 [-n 6] [--step 0.0667] [-o strip.jpg]   consecutive frames
@@ -98,6 +99,16 @@ if (cmd === 'set') {
   const { patchPoses } = await import('./facepatch.mjs');
   const n = await patchPoses(RP('characters', name), { only: pos[1] || null, log });
   log(`  ${n} key(s) with a live face`);
+} else if (cmd === 'qa') {
+  const { checkCharacter, checkScript, report } = await import('./qa.mjs');
+  const targets = pos.length ? pos : fs.readdirSync(RP('characters')).filter((n) => fs.existsSync(RP('characters', n, 'rig.json'))).map((n) => n);
+  let bad = 0;
+  for (const t of targets) {
+    const full = fs.existsSync(t) ? t : RP('characters', t);
+    const rows = String(t).endsWith('.md') ? await checkScript(full) : await checkCharacter(full);
+    bad += report(rows, { log, name: path.basename(t) });
+  }
+  if (bad) { log(`${bad} target(s) with failures`); process.exit(1); }
 } else if (cmd === 'render' && (flag('--part') || flag('--mux'))) {
   // long renders in parts: --part 1/3 ... --part 3/3, then --mux 3 (concat + the audio mix)
   const file = pos[0];
@@ -165,6 +176,6 @@ if (cmd === 'set') {
   for (let i = 0; i < n; i++) { const t = t0 + i * step; E.render(t); g.drawImage(E.canvas, i * w, 0, w, h); g.fillStyle = '#fff'; g.font = '16px sans-serif'; g.fillText(`${t.toFixed(2)}s`, i * w + 6, h + 18); }
   const out = flag('-o', 'out/strip.jpg'); fs.writeFileSync(out, c.toBuffer('image/jpeg', 86)); log(`strip -> ${out}`);
 } else {
-  log('commands: set | rig | poses | faces | render | still | strip');
+  log('commands: set | rig | poses | faces | qa | render | still | strip');
   process.exit(2);
 }

@@ -134,3 +134,27 @@ What made the mouth stop looking like a sticker:
 `[B]/[C] pose-pack` keys now blink (`P.face.blink > 0.45`) and lip-sync while the drawn poses carry
 the body language. Keys where the head is occluded (Bunty `sip`, `laugh`) still fall back to the
 drawing's own face, so they do not blink.
+
+## v7 — the drawing tips, and the gate that stops a dead pack
+
+Pose keys are drawings, so nothing inside them can move. What *can* move is the drawing itself:
+
+- **living pose** (`drawPack`): the head band above the neck line is rotated about the neck (±7°) and
+  offset with the rig's `turn` / `headDX` / `headDY`, the body leans about the hip with `lean` /
+  `hipDX`, and the chest rides `breath`. Both bands are drawn from the same image with an overlapping
+  clip, so the collar line closes over the neck join and no seam appears. The blink and mouth patches
+  are drawn inside the same head transform, so a blink can never slide off a tilted face.
+- **the mouth is inpainted, not boxed.** `inpaintMouth()` erases only the ink below the moustache and
+  grows skin back into it one ring at a time from the surrounding pixels, so the old mouth closes
+  over with the drawing's own shading. The new lips are then placed exactly where the old mouth was,
+  at the old mouth's width. This is what finally removed the sticker look and the "two mouths" that
+  appeared on keys whose drawn mouth was a grin.
+- **`rigpop-motion qa`** is now a build gate: for every pose key it checks the key exists and is not
+  empty, that a face patch was cut at all, that the blink/mouth rects sit inside the image and their
+  files exist, that face size and skin tone do not drift across a pack, and that the script's
+  `[<actor> pose-pack <name>]` lines all resolve. A faceless key is a **failure**, not a warning —
+  that is the exact bug that shipped in v3. `rigpop-motion qa scripts/full-glass.md` passes with
+  3 honest warnings (`sip` is declared occluded; two keys have no blink patch).
+
+Run against the repo's own Kabir packs, the same gate reported **25 failures before and 0 after**
+`rigpop-motion faces kabir` — the demo character had the identical dead-face bug.

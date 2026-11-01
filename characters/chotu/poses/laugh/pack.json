@@ -20,7 +20,28 @@
    "pose": 0,
    "t": 0.4,
    "lift": 0,
-   "face": {}
+   "face": {
+    "mouth": {
+     "x": 145,
+     "y": 282,
+     "w": 206,
+     "h": 165,
+     "files": {
+      "rest": "key0.m.rest.png",
+      "M": "key0.m.M.png",
+      "A": "key0.m.A.png",
+      "O": "key0.m.O.png",
+      "E": "key0.m.E.png"
+     }
+    }
+   },
+   "faceBox": {
+    "x": 14,
+    "y": 138,
+    "w": 469,
+    "h": 344
+   },
+   "neckY": 523
   }
  ]
 }

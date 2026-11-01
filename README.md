@@ -68,7 +68,14 @@ part of the drawing instead of a sticker: the patch is filled with the skin colo
 outside it, row by row, so the drawing's shading runs through unbroken; and the lips are placed
 under the moustache/upper-lip ink rather than over it.
 
-Pose keys also carry the rig's always-on idle (breath and sway) so a held drawing is never frozen.
+Pose keys also carry the rig's always-on idle, and a living-pose warp: the head band is tipped about
+the neck and the body leans about the hip, with the blink/mouth patches inside the same transform.
+A held drawing therefore keeps breathing, nodding and turning instead of freezing.
+
+`rigpop-motion qa [character|script.md]` is the gate for all of this. A pose key with no face patch is
+a **failure** — that is the silent bug where a character animates perfectly and never blinks or
+speaks. It also checks patch rects against the key image, face-size and skin-tone drift across a pack,
+and that every `[<actor> pose-pack <name>]` in a script resolves on that actor's rig.
 
 ### 1 · Painted set, split into parallax plates
 

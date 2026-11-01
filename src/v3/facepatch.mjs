@@ -83,7 +83,14 @@ function mouthBox(im, face, eyes) {
   }).sort((a, b) => b.area - a.area)[0];
   if (bc) {
     const w = Math.max(20, (bc.x1 - bc.x0) * 0.40), h = Math.max(10, w * 0.46);
-    return { x: Math.round(bc.cx - w / 2), y: Math.round(bc.y1 - h * 0.15), w: Math.round(w), h: Math.round(h * 2.0), via: 'moustache' };
+    const box = { x: Math.round(bc.cx - w / 2), y: Math.round(bc.y1 - h * 0.15), w: Math.round(w), h: Math.round(h * 2.0), via: 'moustache' };
+    // grow the box down over the drawn mouth, so the pasted shape replaces it instead of stacking on it
+    const ink = inkBelow(im, box, face);
+    if (ink && ink.w > 6 && ink.h > 3) {
+      const pad = 5;
+      return { x: Math.max(0, ink.x - pad), y: Math.max(0, ink.y - pad), w: ink.w + pad * 2, h: ink.h + pad * 2, mw: ink.w, mcy: Math.round(pad + ink.h / 2), via: 'moustache+ink' };
+    }
+    return box;
   }
 
   // 2 · no moustache: the drawn mouth is a short ink stroke with chin (skin) under it
@@ -106,9 +113,34 @@ function mouthBox(im, face, eyes) {
     for (let dy = 4; dy <= 16; dy++) for (let dx = -8; dx <= 8; dx++) if (skinAt(Math.round(c.cx) + dx, Math.round(c.y1) + dy)) below++;
     return below >= 6;
   }).filter((c) => c.cy > eyeBottom + face.h * 0.1).sort((a, b) => b.cy - a.cy)[0];
-  if (!ok) return null;
+  if (!ok) {
+    // no anchor at all (a laughing mouth, a turned head): fall back to the face's own proportions
+    const w = Math.max(22, face.w * 0.44), h = w * 0.8;
+    return { x: Math.round(face.x + face.w / 2 - w / 2), y: Math.round(face.y + face.h * 0.66 - h / 2), w: Math.round(w), h: Math.round(h), via: 'faceFallback' };
+  }
   const w = Math.max(22, ok.x1 - ok.x0), h = Math.max(10, ok.y1 - ok.y0);
   return { x: Math.round(ok.cx - w), y: Math.round(ok.cy - h * 1.4), w: Math.round(w * 2), h: Math.round(h * 3.4), mw: w, mcy: Math.round(ok.cy - ok.y0) + Math.round(ok.cy - h * 1.4), via: 'stroke' };
+}
+
+// the drawn mouth itself: the ink sitting under the moustache. A grin or an open laugh is a big
+// shape, and if the patch box only covers the lip line the drawing's own mouth shows underneath it
+// and the character gets two mouths. So the box is grown to cover whatever ink is really there.
+function inkBelow(im, box, face) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
+  const xa = Math.max(0, Math.round(box.x - box.w * 0.1)), xb = Math.min(im.w, Math.round(box.x + box.w * 1.1));
+  const ya = Math.max(0, Math.round(box.y)), yb = Math.min(im.h, Math.round(face.y + face.h * 1.02));
+  for (let y = ya; y < yb; y++) for (let x = xa; x < xb; x++) {
+    const i = (y * im.w + x) * 4;
+    if (im.px[i + 3] < 128) continue;
+    const r = im.px[i], g = im.px[i + 1], b = im.px[i + 2];
+    if (isSkinPx(r, g, b)) continue;
+    const blue = b > 90 && b > r + 40 && b > g + 15;
+    const dark = r < 110 && g < 110 && b < 130;
+    if (!blue && !dark) continue;
+    if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y;
+  }
+  if (x1 < 0 || (x1 - x0) < 3 || (y1 - y0) < 2) return null;
+  return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 }
 
 // how far down the moustache reaches, in patch-box coordinates: the mouth is placed under it
@@ -163,8 +195,51 @@ function cloneRect(im, box) {
   g.putImageData(d, 0, 0);
   return c;
 }
-// repaint the drawn mouth with the face's own skin, without leaving a rectangle: every row of the
-// patch is filled by interpolating between the real skin colours just outside the patch on the left
+// Repaint the drawn mouth with skin — not a rectangle of it, which is what made the patch read as a
+// sticker. Only the ink *below the moustache* is erased, and every erased pixel is grown back from
+// the skin around it (nearest-skin flood fill), so the drawing's shading closes over the old mouth
+// with no edge, no flat block and no change to any pixel outside the mouth itself.
+function inpaintMouth(g, im, box) {
+  const d = g.getImageData(0, 0, box.w, box.h);
+  const mu = Math.max(0, inkBottom(im, box) - 1);           // everything below the moustache
+  const mask = new Uint8Array(box.w * box.h);
+  const filled = new Uint8Array(box.w * box.h);
+  let mx0 = 1e9, my0 = 1e9, mx1 = -1, my1 = -1;
+  for (let y = mu; y < box.h; y++) for (let x = 0; x < box.w; x++) {
+    const si = ((box.y + y) * im.w + (box.x + x)) * 4, i = y * box.w + x;
+    const r = im.px[si], gg = im.px[si + 1], b = im.px[si + 2];
+    if (im.px[si + 3] < 128 || isSkinPx(r, gg, b)) continue;
+    mask[i] = 1;
+    if (x < mx0) mx0 = x; if (y < my0) my0 = y; if (x > mx1) mx1 = x; if (y > my1) my1 = y;
+  }
+  for (let i = 0; i < mask.length; i++) if (!mask[i]) filled[i] = 1;
+  if (mx1 < 0) { g.putImageData(d, 0, 0); return null; }
+  // flood the skin in from the boundary, one ring at a time
+  let guard = 0;
+  for (let changed = true; changed && guard++ < 400;) {
+    changed = false;
+    const next = [];
+    for (let y = 0; y < box.h; y++) for (let x = 0; x < box.w; x++) {
+      const i = y * box.w + x;
+      if (!mask[i] || filled[i]) continue;
+      let r = 0, g2 = 0, b2 = 0, n = 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= box.w || ny >= box.h) continue;
+        const ni = ny * box.w + nx;
+        if (!filled[ni]) continue;
+        r += d.data[ni * 4]; g2 += d.data[ni * 4 + 1]; b2 += d.data[ni * 4 + 2]; n++;
+      }
+      if (n) next.push([i, r / n, g2 / n, b2 / n]);
+    }
+    for (const [i, r, g2, b2] of next) { d.data[i * 4] = r; d.data[i * 4 + 1] = g2; d.data[i * 4 + 2] = b2; d.data[i * 4 + 3] = 255; filled[i] = 1; changed = true; }
+  }
+  g.putImageData(d, 0, 0);
+  return { x: mx0, y: my0, w: mx1 - mx0 + 1, h: my1 - my0 + 1 };  // where the old mouth was
+}
+
+// the moustache sits *in front of* the mouth in the drawing, so after the mouth shape is pasted the
+/* ----------------------------------------------------------------- patches */
 // and on the right. The shading of the drawing is therefore carried straight through the patch, and
 // both edges match the surrounding pixels exactly, so there is no seam to see.
 function eraseRect(g, im, box) {
@@ -219,16 +294,24 @@ export async function patchPoses(charDir, { only = null, log = () => {} } = {}) 
       const keyFile = path.join(pdir, K.file);
       if (!fs.existsSync(keyFile)) continue;
       const im = await readRGBA(keyFile);
+      const cfgFile = path.join(pdir, 'pose.config.json');
+      const cfg = fs.existsSync(cfgFile) ? JSON.parse(fs.readFileSync(cfgFile, 'utf8')) : {};
+      if (cfg.face === 'skip') { K.face = { occluded: true }; log(`  ${ch}/${name}: face declared occluded, left as drawn`); continue; }
       const face = faceBox(im);
       if (!face) { log(`  ! ${ch}/${name}/${K.file}: no face`); continue; }
       const skin = face.skin;
       const eyes = eyeBoxes(im, face);
       const mouth = mouthBox(im, face, eyes);
       K.face = {};
+      // where the head meets the body, in key-image pixels: the pose warp tilts the head above this
+      K.faceBox = { x: face.x, y: face.y, w: face.w, h: face.h };
+      K.neckY = Math.round(face.y + face.h * 1.12);
       const i = K.pose;
 
       if (eyes.length === 2) {
         const box = unionBox(eyes, 4);
+        box.x = Math.max(0, box.x); box.y = Math.max(0, box.y);
+        box.w = Math.min(box.w, im.w - box.x); box.h = Math.min(box.h, im.h - box.y);
         const c = cloneRect(im, box);
         const g = c.getContext('2d');
         for (const e of eyes) {
@@ -249,19 +332,23 @@ export async function patchPoses(charDir, { only = null, log = () => {} } = {}) 
       }
 
       if (mouth) {
+        // never let a patch hang off the key: a clipped rect silently shifts the lips
+        mouth.w = Math.min(mouth.w, im.w - 2); mouth.h = Math.min(mouth.h, im.h - 2);
+        mouth.x = Math.max(0, Math.min(mouth.x, im.w - mouth.w));
+        mouth.y = Math.max(0, Math.min(mouth.y, im.h - mouth.h));
         K.face.mouth = { x: mouth.x, y: mouth.y, w: mouth.w, h: mouth.h, files: {} };
         for (const [tag, part, s] of MOUTHS) {
           const src = path.join(dir, 'parts', part + '.png');
           if (!fs.existsSync(src)) continue;
           const c = cloneRect(im, mouth);
           const g = c.getContext('2d');
-          eraseRect(g, im, mouth);
+          const gone = inpaintMouth(g, im, mouth);       // the drawing's own mouth, closed over
           const img = await loadImage(fs.readFileSync(src));
-          const w = (mouth.mw ? Math.min(mouth.w * 0.9, mouth.mw * 2.4) : mouth.w * 0.9) * s, h = w * (img.height / img.width);
-          // sit the lips just under the moustache instead of on top of it
-          const lipTop = mouth.mcy
-            ? Math.max(0, Math.min(mouth.h - h - 1, mouth.mcy - h / 2))
-            : Math.min(mouth.h - h - 1, Math.max(mouth.h * 0.1, inkBottom(im, mouth) + 1));
+          // match the shape to the mouth that was there: same width, same centre
+          const refW = mouth.mw || (gone && gone.w) || mouth.w * 0.6;
+          const w = Math.min(mouth.w * 0.98, refW * (0.92 + 0.22 * s)), h = w * (img.height / img.width);
+          const refY = mouth.mcy ?? (gone ? gone.y + gone.h / 2 : mouth.h * 0.6);
+          const lipTop = Math.max(0, Math.min(mouth.h - h, refY - h / 2));
           g.drawImage(img, mouth.w / 2 - w / 2, lipTop, w, h);
           const f = `key${i}.m.${tag}.png`;
           fs.writeFileSync(path.join(pdir, f), c.toBuffer('image/png'));
@@ -277,3 +364,5 @@ export async function patchPoses(charDir, { only = null, log = () => {} } = {}) 
 }
   return total;
 }
+
+export { faceBox, isSkinPx };

@@ -355,7 +355,12 @@ export function drawHeadImg(g, IR, R, P, J) {
 }
 
 /* ------------------------------------------------------------ pose packs */
-// A pose-pack clip replaces the puppet with full-body painted keys for its duration.
+// A pose-pack clip replaces the puppet with full-body painted keys for its duration. The keys are
+// drawings, so nothing inside them can move — but a drawing can still be *tipped*. The head band is
+// rotated about the neck over a soft overlap band, the body leans about the hip, the chest rises on
+// the rig's breath, and the blink/mouth patches ride the same transform as the head, so a blink can
+// never slide off a tilted face. That is the difference between a slide-show of poses and a
+// character standing there, breathing, turning and nodding.
 export function drawPack(g, IR, R, P) {
   const pk = P.pack, pack = IR.packs[pk.name]; if (!pack) return false;
   const st = packState(pack, pk.u, pk.d);
@@ -365,43 +370,72 @@ export function drawPack(g, IR, R, P) {
   const bust = pack.mode === 'bust';
   const k = bust ? (pack.bustScale || (R.headRx * 1.18) / pack.headRx) : pack.scale * (pack.standPx ? IR.standH / pack.standPx : R.headRx / pack.headRx);
   if (bust) g.translate(0, -(R.thigh + R.shin) * 0.965 + (pack.hipDrop ?? 10));
-  const breath = (P.breath || 0) * 1.4;              // always-on idle, so the drawing breathes
+
+  const sxK = st.sx ?? 1, syK = st.sy ?? 1;
+  const squash = 1 + clamp(st.vel / 5000, -0.12, 0.18);     // fast travel stretches the drawing
+  const breath = (P.breath || 0) * 1.4;                     // always-on idle: the chest rises
   const sway = (P.headTilt || 0) * 2.2 + (P.hipDX || 0) * 0.15;
-  const draw = (alpha, dy, sy) => {
-    g.save(); g.globalAlpha *= alpha; g.translate(sway, -st.lift + dy - breath); g.scale(k * (st.sx ?? 1) / Math.sqrt(sy), k * sy * (st.sy ?? 1));
-    g.drawImage(img, -K.foot.x, -K.foot.y); g.restore();
+  const footX = K.foot.x, footY = K.foot.y;
+  // the neck line: half way down the throat, recorded when the face was cut out of this key
+  const pivotY = K.neckY != null ? K.neckY - footY : -footY + 0.30 * K.h;
+  const hipY = -footY * 0.55;
+  const band = Math.max(6, K.h * 0.05);                     // overlap that hides the neck seam
+  const headRot = clamp((P.turn || 0) * 0.15 + (P.headTilt || 0) * 0.5, -0.12, 0.12);
+  const headDX = (P.headDX || 0) * 0.6 + (P.turn || 0) * 3;
+  const headDY = (P.headDY || 0) * 0.6;
+  const bodyRot = clamp((P.lean || 0) * 0.22 + (P.hipDX || 0) * 0.0012, -0.04, 0.04);
+
+  const band2 = (mode) => {
+    if (mode === 'head') {
+      g.beginPath(); g.rect(-1e4, -1e4, 2e4, pivotY + band + 1e4); g.clip();
+      g.translate(headDX, headDY); g.translate(0, pivotY); g.rotate(headRot); g.translate(0, -pivotY);
+    } else if (mode === 'body') {
+      g.beginPath(); g.rect(-1e4, pivotY - band, 2e4, 1e4); g.clip();
+      g.translate(0, hipY); g.rotate(bodyRot); g.translate(0, -hipY);
+    }
+  };
+  // every pass of the drawing shares one transform, so body and head never separate
+  const put = (mode, alpha = 1, dy = 0, sq = squash) => {
+    g.save(); g.globalAlpha *= alpha;
+    g.translate(sway, -st.lift + dy - breath);
+    g.scale((k * sxK) / Math.sqrt(sq), k * sq * syK);
+    band2(mode);
+    g.drawImage(img, -footX, -footY);
+    g.restore();
   };
   // a drawn pose is a still image, so the rig's own face would never show: paste the patch that
   // matches the moment (a blink, or the mouth shape the speech is asking for) over the drawing
-  const patch = IR.packs[pk.name].face && IR.packs[pk.name].face[st.i];
   const drawFace = () => {
-    if (!patch) return;
+    const patch = pack.face && pack.face[st.i]; if (!patch) return;
     const F = P.face;
-    g.save(); g.scale(k * (st.sx ?? 1), k);
-    const px = (box) => [-K.foot.x + box.x, -K.foot.y + box.y];
+    g.save();
+    g.translate(sway, -st.lift - breath);
+    g.scale(k * sxK, k * squash * syK);
+    band2('head');
+    const px = (box) => [-footX + box.x, -footY + box.y];
     if (patch.blink && (F.blink ?? 0) > 0.45) {
       const b = K.face.blink, [x, y] = px(b);
       g.drawImage(patch.blink, x, y, b.w, b.h);
     } else if (patch.mouth) {
       const m = patch.mouth.rect, [x, y] = px(m);
-      const img2 = patch.mouth.map[MOUTH_TAG[F.mouth] || 'rest'] || patch.mouth.rest;
-      if (img2) g.drawImage(img2, x, y, m.w, m.h);
+      const mimg = patch.mouth.map[MOUTH_TAG[F.mouth] || 'rest'] || patch.mouth.rest;
+      if (mimg) g.drawImage(mimg, x, y, m.w, m.h);
     }
     g.restore();
   };
-  if (patch) drawFace();
   // smear in-between: when the body moves fast, trail a stretched ghost and speed lines
   const vel = st.vel; // units per second, +down
   if (Math.abs(vel) > 250) {
-    const n = 3;
-    for (let i = n; i >= 1; i--) draw(0.16, (vel / 30) * i * 0.5, 1 + Math.min(0.25, Math.abs(vel) / 4000));
+    const sq = 1 + Math.min(0.25, Math.abs(vel) / 4000);
+    for (let i = 3; i >= 1; i--) put(null, 0.16, (vel / 30) * i * 0.5, sq);
     g.save(); g.globalAlpha = clamp((Math.abs(vel) - 250) / 600, 0, 0.7);
     g.beginPath();
     for (const x of [-0.32, -0.12, 0.1, 0.3]) { const yy = -st.lift - pack.height * k * (0.3 + Math.abs(x)); g.moveTo(x * pack.width * k, yy - Math.sign(vel) * 30); g.lineTo(x * pack.width * k, yy - Math.sign(vel) * (30 + Math.abs(vel) / 8)); }
     stroke(g, 4, INK); g.restore();
   }
-  draw(1, 0, 1 + clamp(vel / 5000, -0.12, 0.18));
-  if (patch) drawFace();
+  put('body');
+  put('head');
+  drawFace();
   return true;
 }
 

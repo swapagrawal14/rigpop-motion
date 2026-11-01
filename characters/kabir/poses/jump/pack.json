@@ -15,11 +15,32 @@
    },
    "w": 205,
    "h": 411,
-   "face": 125.12,
+   "face": {
+    "mouth": {
+     "x": 80,
+     "y": 139,
+     "w": 54,
+     "h": 34,
+     "files": {
+      "rest": "key0.m.rest.png",
+      "M": "key0.m.M.png",
+      "A": "key0.m.A.png",
+      "O": "key0.m.O.png",
+      "E": "key0.m.E.png"
+     }
+    }
+   },
    "pose": 0,
    "t": 0.06,
    "lift": 0,
-   "ease": null
+   "ease": null,
+   "faceBox": {
+    "x": 48,
+    "y": 115,
+    "w": 122,
+    "h": 67
+   },
+   "neckY": 190
   },
   {
    "file": "key1.png",
@@ -29,12 +50,33 @@
    },
    "w": 258,
    "h": 423,
-   "face": 125,
+   "face": {
+    "mouth": {
+     "x": 149,
+     "y": 107,
+     "w": 34,
+     "h": 16,
+     "files": {
+      "rest": "key1.m.rest.png",
+      "M": "key1.m.M.png",
+      "A": "key1.m.A.png",
+      "O": "key1.m.O.png",
+      "E": "key1.m.E.png"
+     }
+    }
+   },
    "pose": 1,
    "t": 0.14,
    "lift": 0,
    "ease": "in",
-   "sy": 0.94
+   "sy": 0.94,
+   "faceBox": {
+    "x": 70,
+    "y": 56,
+    "w": 129,
+    "h": 61
+   },
+   "neckY": 124
   },
   {
    "file": "key2.png",
@@ -44,12 +86,33 @@
    },
    "w": 207,
    "h": 470,
-   "face": 125,
+   "face": {
+    "mouth": {
+     "x": 85,
+     "y": 142,
+     "w": 55,
+     "h": 44,
+     "files": {
+      "rest": "key2.m.rest.png",
+      "M": "key2.m.M.png",
+      "A": "key2.m.A.png",
+      "O": "key2.m.O.png",
+      "E": "key2.m.E.png"
+     }
+    }
+   },
    "pose": 2,
    "t": 0.08,
    "lift": 30,
    "ease": "out",
-   "sy": 1.08
+   "sy": 1.08,
+   "faceBox": {
+    "x": 50,
+    "y": 119,
+    "w": 124,
+    "h": 68
+   },
+   "neckY": 195
   },
   {
    "file": "key3.png",
@@ -59,11 +122,32 @@
    },
    "w": 340,
    "h": 442,
-   "face": 125.00000000000001,
+   "face": {
+    "mouth": {
+     "x": 152,
+     "y": 218,
+     "w": 43,
+     "h": 25,
+     "files": {
+      "rest": "key3.m.rest.png",
+      "M": "key3.m.M.png",
+      "A": "key3.m.A.png",
+      "O": "key3.m.O.png",
+      "E": "key3.m.E.png"
+     }
+    }
+   },
    "pose": 3,
    "t": 0.17,
    "lift": 150,
-   "ease": "out"
+   "ease": "out",
+   "faceBox": {
+    "x": 112,
+    "y": 151,
+    "w": 128,
+    "h": 85
+   },
+   "neckY": 246
   },
   {
    "file": "key3.png",
@@ -73,11 +157,32 @@
    },
    "w": 340,
    "h": 442,
-   "face": 125.00000000000001,
+   "face": {
+    "mouth": {
+     "x": 152,
+     "y": 218,
+     "w": 43,
+     "h": 25,
+     "files": {
+      "rest": "key3.m.rest.png",
+      "M": "key3.m.M.png",
+      "A": "key3.m.A.png",
+      "O": "key3.m.O.png",
+      "E": "key3.m.E.png"
+     }
+    }
+   },
    "pose": 3,
    "t": 0.13,
    "lift": 165,
-   "ease": "in"
+   "ease": "in",
+   "faceBox": {
+    "x": 112,
+    "y": 151,
+    "w": 128,
+    "h": 85
+   },
+   "neckY": 246
   },
   {
    "file": "key4.png",
@@ -87,12 +192,33 @@
    },
    "w": 290,
    "h": 392,
-   "face": 124.99999999999999,
+   "face": {
+    "mouth": {
+     "x": 128,
+     "y": 149,
+     "w": 44,
+     "h": 37,
+     "files": {
+      "rest": "key4.m.rest.png",
+      "M": "key4.m.M.png",
+      "A": "key4.m.A.png",
+      "O": "key4.m.O.png",
+      "E": "key4.m.E.png"
+     }
+    }
+   },
    "pose": 4,
    "t": 0.14,
    "lift": 0,
    "ease": "out",
-   "sy": 0.92
+   "sy": 0.92,
+   "faceBox": {
+    "x": 92,
+    "y": 122,
+    "w": 125,
+    "h": 69
+   },
+   "neckY": 199
   },
   {
    "file": "key5.png",
@@ -102,11 +228,32 @@
    },
    "w": 208,
    "h": 457,
-   "face": 125,
+   "face": {
+    "mouth": {
+     "x": 99,
+     "y": 173,
+     "w": 20,
+     "h": 20,
+     "files": {
+      "rest": "key5.m.rest.png",
+      "M": "key5.m.M.png",
+      "A": "key5.m.A.png",
+      "O": "key5.m.O.png",
+      "E": "key5.m.E.png"
+     }
+    }
+   },
    "pose": 5,
    "t": 0.28,
    "lift": 0,
-   "ease": null
+   "ease": null,
+   "faceBox": {
+    "x": 51,
+    "y": 123,
+    "w": 124,
+    "h": 70
+   },
+   "neckY": 201
   }
  ],
  "sfx": [

@@ -44,12 +44,24 @@ Anything marked **fixed here** is committed to the working tree of this checkout
    cost the most: painted-in arms ⇒ pose pack, and never ship a pack whose keys have no `face` block.
 6. `tools/face-patches.mjs` is now a two-line wrapper so older commands keep working.
 
-## D · Still open — the honest list
+## D · Updated after the second pass
+
+- **A2 fixed**: `drawPack()` now holds the drawing in a living pose — a head band tipped about the
+  neck, a body lean about the hip, breath on the chest, patches riding the head transform.
+- **A5 fixed**: `rigpop-motion qa` is a real gate (`src/v3/qa.mjs`) that fails a build on a faceless
+  key, an out-of-bounds patch rect, a missing patch file, and a script naming a pack that does not
+  exist; it warns on scale/colour drift across a pack.
+- **A6 fixed**: the mouth patch is inpainted rather than boxed, and is sized and placed from the
+  mouth that was already drawn there.
+- Proof it is the tool and not our art: `qa kabir` → 25 failures before `faces kabir`, 0 after.
+
+## E · Still open — the honest list
 
 - **Body language is pose-to-pose.** Head turns, weight shifts and hand/hair drift need drawn
   in-betweens or a mesh warp on the head; the engine still only cross-dissolves between keys.
 - **Occluded keys don't blink** (Bunty `sip`, `laugh`) because the eyes are covered by a hand or a
   laugh line — those beats fall back to the drawing's own face.
-- **A5/A6 remain unimplemented**: no build-failing QA, no drawn-vs-rig mouth comparison. A cheaper
-  fix worth doing: have `poses` warn when a key has no face block, and when the detected moustache
-  width and the rig's `mouthW` disagree by more than ~20%.
+- **Head turns are still a tip, not a turn**: the head band rotates a front-view drawing; a real
+  3/4 turn needs either a `head.34` key per pose or a mesh warp on the face.
+- **No drawn in-betweens**: fast pose changes use a smear ghost plus speed lines, not real
+  breakdowns. That is the last big gap between this and hand-drawn pose-to-pose.

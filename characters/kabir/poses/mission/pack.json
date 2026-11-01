@@ -15,11 +15,39 @@
    },
    "w": 451,
    "h": 826,
-   "face": 260,
+   "face": {
+    "blink": {
+     "file": "key0.blink.png",
+     "x": 102,
+     "y": 198,
+     "w": 217,
+     "h": 60
+    },
+    "mouth": {
+     "x": 190,
+     "y": 305,
+     "w": 64,
+     "h": 74,
+     "files": {
+      "rest": "key0.m.rest.png",
+      "M": "key0.m.M.png",
+      "A": "key0.m.A.png",
+      "O": "key0.m.O.png",
+      "E": "key0.m.E.png"
+     }
+    }
+   },
    "pose": 0,
    "t": 0.06,
    "lift": 0,
-   "ease": null
+   "ease": null,
+   "faceBox": {
+    "x": 91,
+    "y": 114,
+    "w": 259,
+    "h": 255
+   },
+   "neckY": 400
   },
   {
    "file": "key1.png",
@@ -29,11 +57,39 @@
    },
    "w": 421,
    "h": 882,
-   "face": 260,
+   "face": {
+    "blink": {
+     "file": "key1.blink.png",
+     "x": 168,
+     "y": 227,
+     "w": 205,
+     "h": 60
+    },
+    "mouth": {
+     "x": 194,
+     "y": 306,
+     "w": 44,
+     "h": 106,
+     "files": {
+      "rest": "key1.m.rest.png",
+      "M": "key1.m.M.png",
+      "A": "key1.m.A.png",
+      "O": "key1.m.O.png",
+      "E": "key1.m.E.png"
+     }
+    }
+   },
    "pose": 1,
    "t": 0.13,
    "lift": 0,
-   "ease": null
+   "ease": null,
+   "faceBox": {
+    "x": 127,
+    "y": 138,
+    "w": 259,
+    "h": 264
+   },
+   "neckY": 434
   },
   {
    "file": "key2.png",
@@ -43,12 +99,40 @@
    },
    "w": 417,
    "h": 864,
-   "face": 260,
+   "face": {
+    "blink": {
+     "file": "key2.blink.png",
+     "x": 136,
+     "y": 241,
+     "w": 212,
+     "h": 42
+    },
+    "mouth": {
+     "x": 187,
+     "y": 358,
+     "w": 76,
+     "h": 48,
+     "files": {
+      "rest": "key2.m.rest.png",
+      "M": "key2.m.M.png",
+      "A": "key2.m.A.png",
+      "O": "key2.m.O.png",
+      "E": "key2.m.E.png"
+     }
+    }
+   },
    "pose": 2,
    "t": 0.11,
    "lift": 0,
    "ease": null,
-   "sy": 0.98
+   "sy": 0.98,
+   "faceBox": {
+    "x": 105,
+    "y": 137,
+    "w": 261,
+    "h": 259
+   },
+   "neckY": 427
   },
   {
    "file": "key1.png",
@@ -58,11 +142,39 @@
    },
    "w": 421,
    "h": 882,
-   "face": 260,
+   "face": {
+    "blink": {
+     "file": "key1.blink.png",
+     "x": 168,
+     "y": 227,
+     "w": 205,
+     "h": 60
+    },
+    "mouth": {
+     "x": 194,
+     "y": 306,
+     "w": 44,
+     "h": 106,
+     "files": {
+      "rest": "key1.m.rest.png",
+      "M": "key1.m.M.png",
+      "A": "key1.m.A.png",
+      "O": "key1.m.O.png",
+      "E": "key1.m.E.png"
+     }
+    }
+   },
    "pose": 1,
    "t": 0.1,
    "lift": 0,
-   "ease": null
+   "ease": null,
+   "faceBox": {
+    "x": 127,
+    "y": 138,
+    "w": 259,
+    "h": 264
+   },
+   "neckY": 434
   },
   {
    "file": "key2.png",
@@ -72,12 +184,40 @@
    },
    "w": 417,
    "h": 864,
-   "face": 260,
+   "face": {
+    "blink": {
+     "file": "key2.blink.png",
+     "x": 136,
+     "y": 241,
+     "w": 212,
+     "h": 42
+    },
+    "mouth": {
+     "x": 187,
+     "y": 358,
+     "w": 76,
+     "h": 48,
+     "files": {
+      "rest": "key2.m.rest.png",
+      "M": "key2.m.M.png",
+      "A": "key2.m.A.png",
+      "O": "key2.m.O.png",
+      "E": "key2.m.E.png"
+     }
+    }
+   },
    "pose": 2,
    "t": 0.11,
    "lift": 0,
    "ease": null,
-   "sy": 0.98
+   "sy": 0.98,
+   "faceBox": {
+    "x": 105,
+    "y": 137,
+    "w": 261,
+    "h": 259
+   },
+   "neckY": 427
   },
   {
    "file": "key3.png",
@@ -87,12 +227,40 @@
    },
    "w": 552,
    "h": 866,
-   "face": 260,
+   "face": {
+    "blink": {
+     "file": "key3.blink.png",
+     "x": 127,
+     "y": 203,
+     "w": 219,
+     "h": 72
+    },
+    "mouth": {
+     "x": 182,
+     "y": 254,
+     "w": 114,
+     "h": 91,
+     "files": {
+      "rest": "key3.m.rest.png",
+      "M": "key3.m.M.png",
+      "A": "key3.m.A.png",
+      "O": "key3.m.O.png",
+      "E": "key3.m.E.png"
+     }
+    }
+   },
    "pose": 3,
    "t": 0.17,
    "lift": 6,
    "ease": "out",
-   "sy": 1.03
+   "sy": 1.03,
+   "faceBox": {
+    "x": 109,
+    "y": 129,
+    "w": 259,
+    "h": 259
+   },
+   "neckY": 419
   },
   {
    "file": "key4.png",
@@ -102,11 +270,39 @@
    },
    "w": 535,
    "h": 857,
-   "face": 260,
+   "face": {
+    "blink": {
+     "file": "key4.blink.png",
+     "x": 141,
+     "y": 195,
+     "w": 209,
+     "h": 69
+    },
+    "mouth": {
+     "x": 206,
+     "y": 338,
+     "w": 78,
+     "h": 50,
+     "files": {
+      "rest": "key4.m.rest.png",
+      "M": "key4.m.M.png",
+      "A": "key4.m.A.png",
+      "O": "key4.m.O.png",
+      "E": "key4.m.E.png"
+     }
+    }
+   },
    "pose": 4,
    "t": 0.32,
    "lift": 0,
-   "ease": null
+   "ease": null,
+   "faceBox": {
+    "x": 113,
+    "y": 118,
+    "w": 254,
+    "h": 260
+   },
+   "neckY": 409
   }
  ],
  "sfx": [

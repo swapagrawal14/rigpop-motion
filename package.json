@@ -22,6 +22,7 @@
     "v3:rig": "node src/v3/cli.mjs rig",
     "v3:poses": "node src/v3/cli.mjs poses",
     "v3:set": "node src/v3/cli.mjs set",
+    "qa": "node src/v3/cli.mjs qa",
     "full-glass": "node src/v3/cli.mjs render scripts/full-glass.md -o out/full-glass.mp4 --crf 24",
     "characters": "node tools/fix-bunty.mjs && node tools/make-chotu.mjs"
   },
