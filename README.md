@@ -9,6 +9,8 @@ npm install
 npm run short          # -> out/chai-short.mp4   (30s, 720x1280, lip-synced, scored)
 ```
 
+▶ **[Watch the demo — out/chai-short.mp4](out/chai-short.mp4)** · 30 s · 4 shots · lip-synced · scored
+
 ---
 
 ## Why it exists
