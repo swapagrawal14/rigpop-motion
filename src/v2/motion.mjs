@@ -487,6 +487,7 @@ export function evalActor(A, t, W) {
       }
     }
     if (o.look && w > 0.5) look = o.look;
+    if (o.pack && w > 0) P.pack = { ...o.pack, w }; // v3 pose packs take over the drawing
   }
 
   // idle — always on

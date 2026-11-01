@@ -15,7 +15,11 @@ import { clamp, lerp, ease, noise, hash, TAU } from './util.mjs';
 GlobalFonts.registerFromPath(RP('assets/fonts/LuckiestGuy-Regular.ttf'), 'Lucky');
 GlobalFonts.registerFromPath(RP('assets/fonts/Baloo2.ttf'), 'Baloo');
 
-export function createEngine(S) {
+// hooks (v3): { scene: { sky, hallway, wall, counter, foreground, lights }, drawHeld }
+// A rig may carry its own drawer (R.draw), e.g. the v3 image rig.
+export function createEngine(S, hooks = {}) {
+  const SC = { sky: drawSky, hallway: drawHallway, wall: drawWall, counter: drawCounter, foreground: drawForeground, lights: drawLights, ...(hooks.scene || {}) };
+  const HELD = hooks.drawHeld || drawHeld;
   const [W, H] = String(S.meta.size || '720x1280').split('x').map(Number);
   const FPS = Number(S.meta.fps || 30);
   const onTwos = S.meta.on_twos !== false;
@@ -146,12 +150,13 @@ export function createEngine(S) {
   /* --------------------------------------------------------------- drawing */
   function drawActor(a, pass, t) {
     g.save(); g.translate(a.L.x, a.gy); g.scale(a.sx, a.sy);
-    drawCharacter(g, a.A.R, a.P, a.J, { pass, t, drawProp: drawHeld });
+    (a.A.R.draw || drawCharacter)(g, a.A.R, a.P, a.J, { pass, t, drawProp: HELD });
     g.restore();
   }
   // smear: fast hands leave a tapered after-image (classic smear frame)
   function drawSmears(id, tq, side) {
     const step = onTwos ? 2 / FPS : 1 / FPS;
+    if (actorAt(id, tq).P.pack) return;
     const a0 = actorAt(id, tq), a1 = actorAt(id, Math.max(0, tq - step)), a2 = actorAt(id, Math.max(0, tq - step * 2));
     const p0 = a0.toW(a0.J.arms[side].hand), p1 = a1.toW(a1.J.arms[side].hand), p2 = a2.toW(a2.J.arms[side].hand);
     const d = Math.hypot(p0.x - p1.x, p0.y - p1.y);
@@ -207,10 +212,10 @@ export function createEngine(S) {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.fillStyle = '#120e18'; g.fillRect(0, 0, W, H);
     // far plane: the sky inside the window frame, the hallway inside the arch
-    setCam(cam, 1); g.save(); g.beginPath(); g.rect(SET.window.x, SET.window.y, SET.window.w, SET.window.h); g.clip(); setCam(cam, 0.55); drawSky(g, t); g.restore();
-    setCam(cam, 1); g.save(); g.beginPath(); archPath(g); g.clip(); setCam(cam, 0.82); drawHallway(g, t); g.restore();
+    setCam(cam, 1); g.save(); g.beginPath(); g.rect(SET.window.x, SET.window.y, SET.window.w, SET.window.h); g.clip(); setCam(cam, 0.55); SC.sky(g, t); g.restore();
+    setCam(cam, 1); g.save(); g.beginPath(); archPath(g); g.clip(); setCam(cam, 0.82); SC.hallway(g, t); g.restore();
     setCam(cam, 1);
-    drawWall(g, t, st);
+    SC.wall(g, t, st);
     const acts = [...S.actors.keys()].map((id) => actorAt(id, tq)).filter((a) => a.L.x > -150 && a.L.x < SET.w + 150);
     acts.sort((a, b) => b.L.z - a.L.z);
     for (const a of acts) {
@@ -222,11 +227,11 @@ export function createEngine(S) {
         drawActor(a, 'body', t);
       }
     }
-    drawCounter(g, t, st);
+    SC.counter(g, t, st);
     for (const a of acts) if (a.L.z <= 1) { for (const sd of ['L', 'R']) if (a.P.arms[sd].front) drawSmears(a.A.id, tq, sd); drawActor(a, 'front', t); }
     drawFx(t, tq);
-    drawLights(g, t, st);
-    setCam(cam, 1.35); drawForeground(g, t);
+    SC.lights(g, t, st);
+    setCam(cam, 1.35); SC.foreground(g, t);
     // over-the-shoulder: the near character's back, big and dark, in the corner
     if (cam.shot.kind === 'ots') {
       const a = actorAt(cam.shot.a, tq);
@@ -234,7 +239,7 @@ export function createEngine(S) {
       const sc = 2.1;
       g.translate(W * 0.16 + 6 * noise(t * 0.4, 4), H * 0.98); g.scale(sc, sc);
       g.translate(-a.J.head.x, -a.J.head.y - 300);
-      drawBack(g, a.A.R, a.P, a.J);
+      (a.A.R.drawBack || drawBack)(g, a.A.R, a.P, a.J);
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.globalCompositeOperation = 'multiply';
       const gr = g.createLinearGradient(0, H, W * 0.6, H * 0.5);
@@ -381,18 +386,22 @@ export function createEngine(S) {
     fs.writeFileSync(file, b);
   }
 
-  async function renderVideo(out, { from = 0, to = S.DUR, crf = 21, progress = () => {} } = {}) {
+  // videoOnly: render a silent segment (long renders are done in parts, then muxed with the mix)
+  async function renderVideo(out, { from = 0, to = S.DUR, crf = 21, progress = () => {}, videoOnly = false } = {}) {
     const DUR = to - from;
     const wav = out.replace(/\.mp4$/, '') + '.mix.wav';
-    const full = mixAudio(S.DUR);
-    writeWav(wav, full.subarray(Math.floor(from * SR), Math.floor(to * SR)));
+    if (!videoOnly) {
+      const full = mixAudio(S.DUR);
+      writeWav(wav, full.subarray(Math.floor(from * SR), Math.floor(to * SR)));
+    }
+    const aIn = videoOnly ? [] : ['-i', wav, '-af', 'alimiter=limit=0.9:attack=4:release=80'];
+    const aOut = videoOnly ? ['-an'] : ['-c:a', 'aac', '-b:a', '128k', '-shortest'];
     const ff = spawn(FFMPEG, [
       '-loglevel', 'error', '-y',
       '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-r', String(FPS), '-i', '-',
-      '-i', wav,
-      '-af', 'alimiter=limit=0.9:attack=4:release=80',
+      ...aIn,
       '-c:v', 'libx264', '-preset', 'medium', '-tune', 'animation', '-pix_fmt', 'yuv420p', '-crf', String(crf),
-      '-c:a', 'aac', '-b:a', '128k', '-shortest', '-movflags', '+faststart', out,
+      ...aOut, '-movflags', '+faststart', out,
     ], { stdio: ['pipe', 'ignore', 'inherit'] });
     const NF = Math.round(DUR * FPS);
     for (let f = 0; f < NF; f++) {
@@ -423,5 +432,5 @@ export function createEngine(S) {
     return out.toBuffer('image/jpeg', 85);
   }
 
-  return { W, H, FPS, DUR: S.DUR, render, still, sheet, renderVideo, mixAudio, sceneState, camera, canvas };
+  return { W, H, FPS, DUR: S.DUR, render, still, sheet, renderVideo, mixAudio, writeWav, sceneState, camera, canvas };
 }

@@ -135,12 +135,13 @@ function wordTimes(text, env, t0) {
   return words.map((word, i) => { const s = t0 + (a + ((b - a) * acc) / tot) / 100; acc += w[i]; const e = t0 + (a + ((b - a) * acc) / tot) / 100; return { word, t0: s, t1: e }; });
 }
 
-export async function compile(src, { baseDir = process.cwd(), log = () => {} } = {}) {
+// resolveRig(castEntry) lets a caller supply rigs that are not v2 vector rigs (v3 image rigs).
+export async function compile(src, { baseDir = process.cwd(), log = () => {}, resolveRig = null } = {}) {
   const { meta, items } = parseScript(src);
   const castMeta = meta.cast || {};
   const actors = new Map();
   for (const [id, c] of Object.entries(castMeta)) {
-    const R = RIGS[c.rig];
+    const R = (resolveRig && resolveRig(c)) || RIGS[c.rig];
     if (!R) throw new Error(`cast ${id}: unknown rig "${c.rig}" (have: ${Object.keys(RIGS).join(', ')})`);
     actors.set(id, { id, R, cast: c, name: c.name || id, moves: [], clips: [], faces: [], looks: [], holds: [], shades: [], speech: [], blinks: [], saccades: [], pos: { ...(MARKS['off-left']) } });
   }
@@ -220,7 +221,7 @@ export async function compile(src, { baseDir = process.cwd(), log = () => {} } =
       case 'camera': {
         const kind = rest[0];
         if (kind === 'push' || kind === 'pull') cam.push({ kind: 'push', t0: t, t1: t + dur(rest[2], 0.8), amt: parseFloat(rest[1]) || (kind === 'push' ? 1.25 : 0.8) });
-        else if (kind === 'shake') cam.push({ kind: 'shake', t0: t, t1: t + dur(rest[1], 0.4), amp: Number(rest[2] || 14) });
+        else if (kind === 'shake') { const off = rest.find((a) => a.startsWith('+')); const ts = t + (off ? dur(off.slice(1), 0) : 0); cam.push({ kind: 'shake', t0: ts, t1: ts + dur(rest[1], 0.4), amp: Number(rest[2] || 14) }); }
         else if (kind === 'whip') { cam.push({ kind: 'whip', t, dir: rest[1] === 'left' ? -1 : 1, d: dur(rest[2], 0.32) }); sfx.push({ t: t - 0.12, name: 'whoosh', gain: 0.5 }); }
         else throw new Error(`line ${it.lineNo}: unknown camera move "${kind}"`);
         break;
