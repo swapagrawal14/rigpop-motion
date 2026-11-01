@@ -17,6 +17,14 @@ const TASKS = {
 };
 const HELP = `rigpop-motion
 
+  v3 — hybrid image rigs (AI-painted parts on the v2 skeleton), painted sets, pose packs:
+  rigpop-motion rig kabir                       # auto-rig characters/kabir from its part sheets
+  rigpop-motion rig kabir --prompts             # the image-model prompts for those sheets
+  rigpop-motion poses kabir jump                # cut + normalise a pose pack
+  rigpop-motion set                             # split the painted kitchen into parallax plates
+  rigpop-motion render scripts/midnight-maggi-v3.md -o out/midnight-maggi-v3.mp4
+  rigpop-motion strip  scripts/midnight-maggi-v3.md -t 26.3 -n 8 -o out/strip.jpg
+
   v2 — vector rigs driven by a stage-direction script:
   rigpop-motion render scripts/midnight-maggi.md -o out/midnight-maggi.mp4
   rigpop-motion still  scripts/midnight-maggi.md -t 4.5,20 -o out/stills
@@ -35,13 +43,19 @@ const HELP = `rigpop-motion
   rigpop-motion maggi     # render the 60s short -> out/maggi-short.mp4
 `;
 
-const V2 = new Set(['render', 'still', 'gif']); // v2 engine: vector rigs + stage-direction scripts
+const V2 = new Set(['gif']); // v2 CLI
+const V3 = new Set(['render', 'still', 'strip', 'rig', 'set']); // v3 CLI (also renders v2 scripts unchanged)
 const cmd = process.argv[2];
+// "poses" with a character and an action is the v3 pose-pack cutter; bare "poses" is v1
+if (cmd === 'poses' && process.argv.length > 4) V3.add('poses');
 if (!cmd || cmd === '-h' || cmd === '--help' || cmd === 'help') {
   console.log(HELP);
   process.exit(0);
 }
-if (V2.has(cmd)) {
+if (V3.has(cmd)) {
+  const p = spawn(process.execPath, [path.join(SRC, 'v3', 'cli.mjs'), ...process.argv.slice(2)], { stdio: 'inherit' });
+  p.on('close', (c) => process.exit(c ?? 0));
+} else if (V2.has(cmd)) {
   const p = spawn(process.execPath, [path.join(SRC, 'v2', 'cli.mjs'), ...process.argv.slice(2)], { stdio: 'inherit' });
   p.on('close', (c) => process.exit(c ?? 0));
 } else {

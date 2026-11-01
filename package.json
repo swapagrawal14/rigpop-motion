@@ -1,14 +1,14 @@
 {
   "name": "rigpop-motion",
-  "version": "0.2.0",
-  "description": "Cartoon animation in code: layered vector character rigs with IK, an always-alive motion system, and readable stage-direction scripts rendered to vertical reels with voices, captions and cue-locked sound.",
+  "version": "0.3.0",
+  "description": "Cartoon animation in code: vector or AI-painted character rigs on one IK skeleton, an always-alive motion system, pose packs, and readable stage-direction scripts rendered to vertical reels with voices, captions and cue-locked sound.",
   "type": "module",
   "bin": {
     "rigpop-motion": "bin/rigpop-motion.js"
   },
   "scripts": {
-    "render": "node src/v2/cli.mjs render",
-    "still": "node src/v2/cli.mjs still",
+    "render": "node src/v3/cli.mjs render",
+    "still": "node src/v3/cli.mjs still",
     "midnight": "node src/v2/cli.mjs render scripts/midnight-maggi.md -o out/midnight-maggi.mp4 --crf 25",
     "poses": "node src/extract-poses.mjs",
     "walk": "node src/flipbook-walk.mjs",
@@ -17,7 +17,11 @@
     "short": "node src/chai-short.mjs",
     "maggi": "node src/maggi-short.mjs",
     "maggi:assets": "node src/maggi-assets.mjs",
-    "maggi:prep": "node src/prep-maggi.mjs"
+    "maggi:prep": "node src/prep-maggi.mjs",
+    "midnight:v3": "node src/v3/cli.mjs render scripts/midnight-maggi-v3.md -o out/midnight-maggi-v3.mp4 --crf 25",
+    "v3:rig": "node src/v3/cli.mjs rig",
+    "v3:poses": "node src/v3/cli.mjs poses",
+    "v3:set": "node src/v3/cli.mjs set"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.1.0",
@@ -35,6 +39,14 @@
     "assets/fonts",
     "assets/maggi/*.wav",
     "assets/maggi/bed.m4a",
-    "assets/chai/*.wav"
+    "assets/chai/*.wav",
+    "characters/*/rig.json",
+    "characters/*/rig-src.json",
+    "characters/*/parts",
+    "characters/*/poses/*/*.png",
+    "characters/*/poses/*/pack.json",
+    "assets/v3/night-kitchen/*.png",
+    "assets/v3/night-kitchen/set.json",
+    "assets/v3/props"
   ]
 }
