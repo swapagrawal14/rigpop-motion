@@ -2,16 +2,22 @@
 
 <img src="docs/banner.png" alt="rigpop-motion — cartoon animation in code" width="100%">
 
-**Vector character rigs · IK arms · an always-alive motion system · stage-direction scripts.**
+**Vector or AI-painted character rigs on one IK skeleton · an always-alive motion system · pose packs · stage-direction scripts.**
 Write a short like a screenplay; get a 720×1280 reel with voices, captions and cue-locked sound.
 
 <br>
 
-<img src="docs/midnight-maggi.gif" width="300" alt="Midnight Maggi: Kabir tastes the Maggi, laughs, his little sister appears in the doorway, he jumps">
+<img src="docs/midnight-maggi-v3.gif" width="300" alt="Midnight Maggi v3: painted Kabir laughs over the pan, his sister appears in the doorway, he jumps out of his skin (a painted pose pack)">
+&nbsp;
+<img src="docs/midnight-maggi.gif" width="300" alt="Midnight Maggi v2: the same scene with the vector rig">
+
+<sub>v3 (left): painted parts, painted set, a pose-pack jump · v2 (right): everything drawn in code</sub>
 
 <br><br>
 
-[**▶ Watch “Midnight Maggi” (40 s)**](out/midnight-maggi.mp4) &nbsp;·&nbsp;
+[**▶ Watch “Midnight Maggi” v3 (40 s)**](out/midnight-maggi-v3.mp4) &nbsp;·&nbsp;
+[v2 cut](out/midnight-maggi.mp4) &nbsp;·&nbsp;
+[v3: hybrid image rig](#-v3-hybrid-image-rig-auto-rig-and-pose-packs) &nbsp;·&nbsp;
 [Script format](#-the-script-is-the-animation) &nbsp;·&nbsp;
 [Quickstart](#-quickstart) &nbsp;·&nbsp;
 [What makes it move](#-what-makes-it-move) &nbsp;·&nbsp;
@@ -22,13 +28,147 @@ Write a short like a screenplay; get a 720×1280 reel with voices, captions and 
 ![Node](https://img.shields.io/badge/node-%E2%89%A518-3c873a?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-1b1826?style=flat-square)
 ![Output](https://img.shields.io/badge/output-mp4%20%C2%B7%20720%C3%971280%20%C2%B7%2030fps-e8695f?style=flat-square)
-![Art](https://img.shields.io/badge/art-100%25%20code%2C%20no%20raster%20AI-ffd94a?style=flat-square)
+![Art](https://img.shields.io/badge/art-vector%20rigs%20or%20AI--painted%20parts-ffd94a?style=flat-square)
 
 </div>
 
 ---
 
 <img src="docs/logo.png" width="88" align="right" alt="rigpop-motion logo">
+
+## 🧩 v3: hybrid image rig, auto-rig and pose packs
+
+v1 used whole AI paintings of a character, and a painting can't bend, so the shorts were stiff.
+v2 drew everything in code so it could act. v3 brings the paintings back **without losing the
+motion**. The image model paints the *parts*, the engine rigs them itself, and the v2 skeleton
+moves them. When a move is too big for a puppet, the model paints a few full-body *key poses*
+and the engine plays them as a flip-book inside the shot.
+
+<img src="docs/v2-vs-v3.jpg" width="100%" alt="The same four moments of Midnight Maggi in v2 (vector) and v3 (painted parts)">
+
+<sub>The same script beats in v2 (top) and v3 (bottom): ECU, insert on the pan, the startled jump, the payoff two-shot.</sub>
+
+### 1 · Painted set, split into parallax plates
+
+The v2 kitchen is rendered without its cast and given to the image model as a **layout guide**,
+together with the style reference. The model repaints it, keeping every landmark where the
+engine expects it: arch, window, fridge, counter line, stove. `rigpop-motion set` then splits that
+one painting into layers. Each layer moves at its own rate with the camera:
+
+| layer | from | parallax |
+|---|---|---|
+| night sky (through the window glass) | its own generation | 0.55 |
+| hallway with the bedroom-door glow (through the arch) | its own generation | 0.82 |
+| back wall, arch cut out, glass thinned | the guided repaint | 1.0 |
+| fridge open, with and without the stash | a guided edit, cross-faded by `fridge` state | 1.0 |
+| counter + stove band, drawn over the cast | masked from the same repaint | 1.0 |
+| hanging utensils | chroma-keyed generation | 1.35 |
+
+Props (pan, noodle packet, spatula, bowl) come from one chroma sheet, keyed to transparent PNGs.
+The image model draws no text, so the code adds it: the fridge note, and the `NO SLEEP` print
+baked onto the painted tee.
+
+### 2 · `rigpop-motion rig <character>`: auto-rigging from part sheets
+
+```
+characters/kabir/
+  rig-src.json      style bible, prompts, sheet files, a reading-order label manifest
+  sheets/           model.png · head.png · body.png · face.png   (image model, chroma green)
+  parts/            25 transparent parts, limbs turned upright
+  rig.json          pivots, face anchors, sampled skin/hair colours, base skeleton
+  rig-preview.jpg   every part with its pivots marked
+```
+
+1. **Generate.** Every sheet prompt repeats the same style bible. The model sheet is passed as a
+   reference to every part sheet, and the head sheet to the face kit, so all the parts match.
+   Head sheet: front and ¾ heads with a *blank face*, plus the sunglasses. Body sheet: torso,
+   upper arm, forearm, three hands, thigh, shin, foot, each limb drawn vertical. Face kit: eye
+   pairs (open, half, closed, happy) and mouths (A, E, O, M, smile, laugh, frown, smirk).
+   `rigpop-motion rig kabir --prompts` prints them.
+2. **Auto-cut.** Key the screen (by greenness, so the model's soft ground shadows go too), then
+   find connected components. Specks and the labels the model writes anyway are dropped. Stray
+   bits (a lash flick, a hair strand) join their part, and the sheet is read in rows. The
+   manifest only says what was drawn in reading order: `"eyes.open*2"` means two items form one
+   part, and `"mouth.laugh>0.47"` means keep the bottom of it. Each part gets a 1 px erode and a
+   re-inked edge, so no green halo is left. Face patches have their skin lifted out, so the head's
+   own skin shows through and a patch edge can never show.
+3. **Auto-pivot.** Each limb is turned upright along its principal axis. Each joint sits one
+   end-radius inside the end, so the rounded caps overlap the next part. Hands get a wrist,
+   the foot an ankle and sole line. The torso gets neck, shoulders and hip from its silhouette,
+   with painted sleeves trimmed back and re-inked (the arms bring their own). The head gets its
+   face ellipse from the blank skin.
+4. **Map onto the v2 skeleton.** Bones keep their v2 lengths, so every v2 action, IK target,
+   idle and lip-sync works unchanged. The shoulders move to where the painted torso has them.
+
+**How a painted elbow bends.** The upper arm and forearm are composed into one straight strip:
+the child goes first, then the parent, trimmed at the joint so its cap never draws a seam line.
+That strip is laid along the IK chain slice by slice, and the joint is a smooth curve. The
+elbow or knee bends like rubber-hose, the texture follows the bone, and nothing can come loose.
+Torso, head, hands and feet are rigid sprites on the solved joints. Eyes and mouths are pasted
+patches driven by the same blinks, lids and visemes as v2. Brows, nose, blush, sweat and neck stay
+thin vector ink.
+
+```yaml
+cast:
+  K: { rig: image:characters/kabir, name: Kabir, voice: hi-IN-MadhurNeural }   # painted parts
+  C: { rig: vector:chhoti, name: Chhoti, voice: hi-IN-SwaraNeural }            # the v2 rig
+```
+
+### 3 · `rigpop-motion poses <character> <action>`: pose packs
+
+For the moves a puppet can't sell, the model paints 4–8 full-body keys of the same character.
+The startled jump is six. `poses` cuts them and evens out the model's size drift by measuring
+each face. It puts every pair of feet on one floor line and sizes the pack from the standing
+key, so it matches the puppet exactly. In the script it is one verb:
+
+```markdown
+C (naughty): Bhaiyaaa...
+[K pose-pack jump 1.1s &] [camera shake 0.5s 26 +0.65s]
+```
+
+Keys hold on twos with per-key timing. The lift arc is eased (anticipation, ballistic air,
+landing squash). Fast moves get smear in-betweens: stretched ghost trails plus speed lines.
+Camera, shake, exclaim marks and SFX are cue-locked as usual. While the pack plays, the
+puppet keeps solving underneath, so framing and FX anchors don't jump.
+
+<img src="docs/v3-jump-frames.jpg" width="100%" alt="21 consecutive frames of the pose-pack jump">
+
+<sub>1.4 s of `out/midnight-maggi-v3.mp4` at 15 fps: rest, anticipation squash, take-off, mid-air fright with smear, landing, the scared recover, then the cut to ECU.</sub>
+
+### Run it
+
+```bash
+npx rigpop-motion set                                   # plates + props from assets/v3/night-kitchen/src
+npx rigpop-motion rig kabir && npx rigpop-motion rig chhoti
+npx rigpop-motion poses kabir jump
+npx rigpop-motion render scripts/midnight-maggi-v3.md -o out/midnight-maggi-v3.mp4 --crf 25
+npx rigpop-motion render scripts/midnight-maggi-v3.md --part 1/3 -o out/x.mp4   # long renders in parts…
+npx rigpop-motion render scripts/midnight-maggi-v3.md --mux 3 -o out/x.mp4       # …then concat + audio
+npx rigpop-motion strip  scripts/midnight-maggi-v3.md -t 26.3 -n 8 -o out/strip.jpg  # consecutive frames
+```
+
+The v3 reel renders at about **14 fps** on a 2-core sandbox (v2: about 15). The 40 s, 1,199-frame
+reel takes 84 s and comes out at 6.1 MB. The v3 CLI renders v2 scripts pixel-identically.
+
+### v2 or v3? Honest notes
+
+- **Richer:** textured hair, painted fabric folds and sneakers, a lit, detailed kitchen with real
+  depth, and expressive painted mouths and eyes. The jump reads much bigger as a pose pack.
+- **Still v2's strengths:** hair has no secondary motion in v3 (no flop, no pigtail swing).
+  Chhoti's brows are painted into her eye patches, so they can't act. A ¾ head is a swap, not a
+  turn. Extreme close-ups are softer, because a ~450 px painted head is scaled up to 2–3× where
+  vectors stay crisp. The over-the-shoulder back view is a flat silhouette of the painted parts.
+- **Pose packs** are holds: between keys only the arc, squash and smears move, and the model's
+  "take-off" key isn't as stretched as asked. Its tee print is re-added in code, and hands can
+  cover it.
+- **Generation is outside the CLI.** `rig --prompts` and `poses --prompt` print what to ask any
+  image model; this repo's sheets were made with Hark's image tool. The label manifest records
+  what the model actually drew, because it rarely keeps a requested grid exactly.
+
+Mix freely: each cast entry picks `image:` or `vector:`, and each script picks
+`scene: painted-night-kitchen` or `night-kitchen`.
+
+---
 
 ## 🎬 v2: from motion comic to cartoon
 
@@ -217,6 +357,8 @@ on it straight away. Chhoti is the same rig as Kabir with different numbers.
 - [x] stage-direction script format + `render` / `still` / `gif` CLI
 - [x] 3-plane parallax set, shot grammar (wide / medium / close / ECU / insert / OTS / two), whip pans
 - [x] cue-locked SFX scheduled by the actions themselves
+- [x] v3: AI-painted parts auto-rigged onto the same skeleton, painted parallax plates, pose packs
+- [ ] secondary motion for painted hair (split hair into its own part with a spring)
 - [ ] side and back views for the rig (today it is front and 3/4)
 - [ ] more sets (`hostel-room`, `chai-tapri`, `classroom`) from the same kit
 - [ ] a third character type (warden aunty) and costume swaps
@@ -229,7 +371,17 @@ on it straight away. Chhoti is the same rig as Kabir with different numbers.
 ## 🗂️ Repo layout
 
 ```
-bin/rigpop-motion.js      CLI: render · still · gif (v2) and the v1 tasks
+bin/rigpop-motion.js      CLI: render · still · strip · rig · poses · set (v3), gif (v2), the v1 tasks
+src/v3/imgops.mjs         chroma key, connected components, re-ink, principal axis
+src/v3/autorig.mjs        part sheets -> parts/*.png + rig.json (cut, pivots, face anchors)
+src/v3/imagerig.mjs       draws a solved v2 pose with painted parts (bent limb strips, face patches)
+src/v3/posepack.mjs       pose packs: cut, normalise, timing, the [K pose-pack ...] verb
+src/v3/set-guide.mjs      renders the v2 set as a layout guide for the image model
+src/v3/plates.mjs         painted plates + image props through the engine's scene hooks
+src/v3/cli.mjs            set / rig / poses / render / still / strip
+characters/<name>/        sheets, parts, rig.json, poses/<action>/ (v3 image rigs)
+assets/v3/                painted night-kitchen plates (src/ = raw generations) and props
+scripts/midnight-maggi-v3.md  the v3 reel
 src/v2/util.mjs           easing (back, spring), noise, 2-bone IK
 src/v2/ink.mjs            outline + flat fill + cel shadow primitives
 src/v2/rig.mjs            the character rig: parts, IK, faces, hands, back view
