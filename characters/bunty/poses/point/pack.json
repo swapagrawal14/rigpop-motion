@@ -28,6 +28,16 @@
      "w": 54,
      "h": 24
     },
+    "eyes": {
+     "file": "key0.eyes.png",
+     "pupil": {
+      "file": "key0.pupils.png",
+      "x": 11,
+      "y": 9,
+      "w": 35,
+      "h": 8
+     }
+    },
     "mouth": {
      "x": 77,
      "y": 83,

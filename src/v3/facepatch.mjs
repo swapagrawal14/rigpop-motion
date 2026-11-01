@@ -122,6 +122,30 @@ function mouthBox(im, face, eyes) {
   return { x: Math.round(ok.cx - w), y: Math.round(ok.cy - h * 1.4), w: Math.round(w * 2), h: Math.round(h * 3.4), mw: w, mcy: Math.round(ok.cy - ok.y0) + Math.round(ok.cy - h * 1.4), via: 'stroke' };
 }
 
+// the pupil: the dark disc sitting inside the sclera. Its own sprite is cut out (glint included) and
+// the disc is filled back in with sclera, so the eye can look around instead of being painted shut.
+function pupilBoxes(im, eyes) {
+  const m = { w: im.w, h: im.h, px: new Uint8ClampedArray(im.w * im.h * 4) };
+  for (const e of eyes) for (let y = e.y; y < e.y + e.h; y++) for (let x = e.x; x < e.x + e.w; x++) {
+    const i = (y * im.w + x) * 4;
+    if (im.px[i + 3] < 128) continue;
+    const lo = Math.min(im.px[i], im.px[i + 1], im.px[i + 2]);
+    if (lo < 120) m.px[i + 3] = 255;                  // anything dark inside the eye is pupil or lid
+  }
+  const { comps } = components(m);
+  const out = [];
+  for (const e of eyes) {
+    const c = comps.filter((k) => k.cx > e.x - 2 && k.cx < e.x + e.w + 2 && k.cy > e.y - 2 && k.cy < e.y + e.h + 2 && k.area > 6)
+      .sort((a, b) => b.area - a.area)[0];
+    if (!c) return null;
+    const x0 = Math.max(e.x + 1, c.x0 - 1), y0 = Math.max(e.y + 1, c.y0 - 1);
+    const x1 = Math.min(e.x + e.w - 1, c.x1 + 1), y1 = Math.min(e.y + e.h - 1, c.y1 + 1);
+    if (x1 - x0 < 3 || y1 - y0 < 3) return null;
+    out.push({ x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 });
+  }
+  return out;
+}
+
 // the drawn mouth itself: the ink sitting under the moustache. A grin or an open laugh is a big
 // shape, and if the patch box only covers the lip line the drawing's own mouth shows underneath it
 // and the character gets two mouths. So the box is grown to cover whatever ink is really there.
@@ -329,6 +353,44 @@ export async function patchPoses(charDir, { only = null, log = () => {} } = {}) 
         const f = `key${i}.blink.png`;
         fs.writeFileSync(path.join(pdir, f), c.toBuffer('image/png'));
         K.face.blink = { file: f, ...box };
+
+        // eye darts: an open-eye patch with the pupils lifted out, plus the pupils as their own sprite
+        const pupils = pupilBoxes(im, eyes);
+        if (pupils) {
+          const ec = cloneRect(im, box), eg = ec.getContext('2d');
+          const d = eg.getImageData(0, 0, box.w, box.h);
+          const sclera = (() => {
+            const rs = [], gs = [], bs = [];
+            for (const e of eyes) for (let y = e.y; y < e.y + e.h; y += 1) for (let x = e.x; x < e.x + e.w; x += 1) {
+              const i = (y * im.w + x) * 4;
+              if (im.px[i + 3] > 200 && Math.min(im.px[i], im.px[i + 1], im.px[i + 2]) > 150) { rs.push(im.px[i]); gs.push(im.px[i + 1]); bs.push(im.px[i + 2]); }
+            }
+            const md = (a) => (a.length ? a.sort((p, q) => p - q)[a.length >> 1] : 250);
+            return [md(rs), md(gs), md(bs)];
+          })();
+          // the pupil rect becomes flat sclera, so the sprite can slide over it
+          for (const p of pupils) for (let y = p.y; y < p.y + p.h; y++) for (let x = p.x; x < p.x + p.w; x++) {
+            const di = ((y - box.y) * box.w + (x - box.x)) * 4;
+            d.data[di] = sclera[0]; d.data[di + 1] = sclera[1]; d.data[di + 2] = sclera[2];
+          }
+          eg.putImageData(d, 0, 0);
+          const ef = `key${i}.eyes.png`;
+          fs.writeFileSync(path.join(pdir, ef), ec.toBuffer('image/png'));
+          // sprite: the two pupils on a transparent canvas the size of the eyes patch
+          const sp = createCanvas(box.w, box.h), sg = sp.getContext('2d');
+          const sd = sg.createImageData(box.w, box.h);
+          for (const p of pupils) for (let y = p.y; y < p.y + p.h; y++) for (let x = p.x; x < p.x + p.w; x++) {
+            const si = (y * im.w + x) * 4, di = ((y - box.y) * box.w + (x - box.x)) * 4;
+            for (let q = 0; q < 4; q++) sd.data[di + q] = im.px[si + q];
+          }
+          sg.putImageData(sd, 0, 0);
+          const pf = `key${i}.pupils.png`;
+          fs.writeFileSync(path.join(pdir, pf), sp.toBuffer('image/png'));
+          const pb = { x: Math.min(...pupils.map((p) => p.x)) - box.x, y: Math.min(...pupils.map((p) => p.y)) - box.y };
+          pb.w = Math.max(...pupils.map((p) => p.x + p.w)) - box.x - pb.x;
+          pb.h = Math.max(...pupils.map((p) => p.y + p.h)) - box.y - pb.y;
+          K.face.eyes = { file: ef, pupil: { file: pf, ...pb } };
+        }
       }
 
       if (mouth) {

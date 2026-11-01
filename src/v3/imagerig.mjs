@@ -71,6 +71,10 @@ export async function loadImageRig(dir) {
     pack.face = []; for (const k of pack.keys) {
       const f = { blink: null, mouth: null };
       if (k.face && k.face.blink) f.blink = await loadImage(fs.readFileSync(path.join(pd, a, k.face.blink.file)));
+      if (k.face && k.face.eyes) {
+        f.eyes = { rect: k.face.eyes, img: await loadImage(fs.readFileSync(path.join(pd, a, k.face.eyes.file))) };
+        f.eyes.pupils = await loadImage(fs.readFileSync(path.join(pd, a, k.face.eyes.pupil.file)));
+      }
       if (k.face && k.face.mouth) {
         f.mouth = { rect: k.face.mouth, map: {}, rest: null };
         for (const [tag, file] of Object.entries(k.face.mouth.files)) f.mouth.map[tag] = await loadImage(fs.readFileSync(path.join(pd, a, file)));
@@ -383,24 +387,44 @@ export function drawPack(g, IR, R, P) {
   const headRot = clamp((P.turn || 0) * 0.15 + (P.headTilt || 0) * 0.5, -0.12, 0.12);
   const headDX = (P.headDX || 0) * 0.6 + (P.turn || 0) * 3;
   const headDY = (P.headDY || 0) * 0.6;
+  // NOTE: squeezing the head band horizontally, to fake a 3/4 turn out of a front drawing, was tried
+  // and removed. The hair and jaw sit far from the face centre, so narrowing leaves a doubled contour
+  // inside the neck blend. A real turn needs a 3/4 key per pose; what a front drawing can honestly
+  // give is the tip, the lean and the eye darts (the pupils are their own patch, below).
   const bodyRot = clamp((P.lean || 0) * 0.22 + (P.hipDX || 0) * 0.0012, -0.04, 0.04);
 
-  const band2 = (mode) => {
-    if (mode === 'head') {
-      g.beginPath(); g.rect(-1e4, -1e4, 2e4, pivotY + band + 1e4); g.clip();
-      g.translate(headDX, headDY); g.translate(0, pivotY); g.rotate(headRot); g.translate(0, -pivotY);
-    } else if (mode === 'body') {
-      g.beginPath(); g.rect(-1e4, pivotY - band, 2e4, 1e4); g.clip();
-      g.translate(0, hipY); g.rotate(bodyRot); g.translate(0, -hipY);
-    }
+  const headXform = (c) => {
+    c.translate(headDX, headDY); c.translate(0, pivotY); c.rotate(headRot); c.translate(0, -pivotY);
   };
-  // every pass of the drawing shares one transform, so body and head never separate
-  const put = (mode, alpha = 1, dy = 0, sq = squash) => {
+  const bodyXform = (c) => { c.translate(0, hipY); c.rotate(bodyRot); c.translate(0, -hipY); };
+  // the body: the whole drawing, leaning about the hip
+  const put = (alpha = 1, dy = 0, sq = squash) => {
     g.save(); g.globalAlpha *= alpha;
     g.translate(sway, -st.lift + dy - breath);
     g.scale((k * sxK) / Math.sqrt(sq), k * sq * syK);
-    band2(mode);
+    bodyXform(g);
     g.drawImage(img, -footX, -footY);
+    g.restore();
+  };
+  // the head: the drawing tipped and slid, drawn into a scratch canvas and masked with a vertical
+  // gradient so it fades into the body across the neck instead of leaving a cut line
+  const putHead = (alpha = 1) => {
+    const W = Math.ceil(img.width) + 4, H = Math.ceil(img.height) + 4;
+    if (!IR._oc || IR._oc.width < W || IR._oc.height < H) IR._oc = createCanvas(Math.max(W, IR._oc ? IR._oc.width : 0), Math.max(H, IR._oc ? IR._oc.height : 0));
+    const oc = IR._oc, og = oc.getContext('2d');
+    og.setTransform(1, 0, 0, 1, 0, 0); og.globalAlpha = 1; og.globalCompositeOperation = 'source-over';
+    og.clearRect(0, 0, oc.width, oc.height);
+    og.save(); og.translate(footX, footY); headXform(og); og.drawImage(img, -footX, -footY); og.restore();
+    og.globalCompositeOperation = 'destination-in';
+    const gy = pivotY + footY;
+    const gr = og.createLinearGradient(0, gy - band * 2.2, 0, gy + band * 2.2);
+    gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.42, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    og.fillStyle = gr; og.fillRect(0, 0, oc.width, oc.height);
+    og.globalCompositeOperation = 'source-over';
+    g.save(); g.globalAlpha *= alpha;
+    g.translate(sway, -st.lift - breath);
+    g.scale((k * sxK) / Math.sqrt(squash), k * squash * syK);
+    g.drawImage(oc, 0, 0, oc.width, oc.height, -footX, -footY, oc.width, oc.height);
     g.restore();
   };
   // a drawn pose is a still image, so the rig's own face would never show: paste the patch that
@@ -411,11 +435,19 @@ export function drawPack(g, IR, R, P) {
     g.save();
     g.translate(sway, -st.lift - breath);
     g.scale(k * sxK, k * squash * syK);
-    band2('head');
+    headXform(g);
     const px = (box) => [-footX + box.x, -footY + box.y];
     if (patch.blink && (F.blink ?? 0) > 0.45) {
       const b = K.face.blink, [x, y] = px(b);
       g.drawImage(patch.blink, x, y, b.w, b.h);
+    } else if (patch.eyes) {
+      // eye darts: the open-eye patch with the pupils lifted out, then the pupils slid across it
+      const E = patch.eyes, r = E.rect, [x, y] = px(r);
+      g.drawImage(E.img, x, y, r.w, r.h);
+      const P0 = r.pupil;
+      const dx = clamp(F.lookX ?? 0, -1.2, 1.2) * r.w * 0.035, dy = clamp(F.lookY ?? 0, -1, 1) * r.h * 0.06;
+      g.drawImage(E.pupils, x + P0.x + dx, y + P0.y + dy, r.w, r.h);
+      if (patch.mouth) { const m2 = patch.mouth.rect, [mx, my] = px(m2); const mi = patch.mouth.map[MOUTH_TAG[F.mouth] || 'rest'] || patch.mouth.rest; if (mi) g.drawImage(mi, mx, my, m2.w, m2.h); }
     } else if (patch.mouth) {
       const m = patch.mouth.rect, [x, y] = px(m);
       const mimg = patch.mouth.map[MOUTH_TAG[F.mouth] || 'rest'] || patch.mouth.rest;
@@ -427,14 +459,14 @@ export function drawPack(g, IR, R, P) {
   const vel = st.vel; // units per second, +down
   if (Math.abs(vel) > 250) {
     const sq = 1 + Math.min(0.25, Math.abs(vel) / 4000);
-    for (let i = 3; i >= 1; i--) put(null, 0.16, (vel / 30) * i * 0.5, sq);
+    for (let i = 3; i >= 1; i--) put(0.16, (vel / 30) * i * 0.5, sq);
     g.save(); g.globalAlpha = clamp((Math.abs(vel) - 250) / 600, 0, 0.7);
     g.beginPath();
     for (const x of [-0.32, -0.12, 0.1, 0.3]) { const yy = -st.lift - pack.height * k * (0.3 + Math.abs(x)); g.moveTo(x * pack.width * k, yy - Math.sign(vel) * 30); g.lineTo(x * pack.width * k, yy - Math.sign(vel) * (30 + Math.abs(vel) / 8)); }
     stroke(g, 4, INK); g.restore();
   }
-  put('body');
-  put('head');
+  put();
+  putHead();
   drawFace();
   return true;
 }

@@ -61,7 +61,10 @@ Anything marked **fixed here** is committed to the working tree of this checkout
   in-betweens or a mesh warp on the head; the engine still only cross-dissolves between keys.
 - **Occluded keys don't blink** (Bunty `sip`, `laugh`) because the eyes are covered by a hand or a
   laugh line — those beats fall back to the drawing's own face.
-- **Head turns are still a tip, not a turn**: the head band rotates a front-view drawing; a real
-  3/4 turn needs either a `head.34` key per pose or a mesh warp on the face.
+- **Head turns are still a tip, not a turn.** A silhouette squeeze of the head band was implemented,
+  rendered at three strengths and **rejected**: hair and jaw sit far from the face centre, so the
+  neck blend shows a doubled contour. What shipped instead is the tip, the lean, the soft neck blend
+  and **eye darts** (pupils are their own sprite and follow `face.lookX`). A true 3/4 turn needs a
+  `head.34` key per pose or a face mesh warp.
 - **No drawn in-betweens**: fast pose changes use a smear ghost plus speed lines, not real
   breakdowns. That is the last big gap between this and hand-drawn pose-to-pose.

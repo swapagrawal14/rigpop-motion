@@ -158,3 +158,19 @@ Pose keys are drawings, so nothing inside them can move. What *can* move is the 
 
 Run against the repo's own Kabir packs, the same gate reported **25 failures before and 0 after**
 `rigpop-motion faces kabir` — the demo character had the identical dead-face bug.
+
+## v8 — the eyes lead
+
+- **eye darts.** Every key's eye box is now cut twice: `keyN.eyes.png` is the open eye with the pupils
+  lifted out (their discs filled back in with the sclera's own median colour) and `keyN.pupils.png`
+  is the pupils as a transparent sprite. `drawFace()` pastes the open eye, then slides the pupil
+  sprite by the rig's `face.lookX` / `lookY`, so a character looks at the person speaking, glances
+  aside during a beat and snaps back — the cheapest, strongest life cue a still drawing has.
+- **the neck blend is soft.** The head band is composited through a scratch canvas with a vertical
+  alpha gradient instead of a hard clip, so a tipped head melts into the body at the collar.
+
+**Tried and rejected in this pass — worth recording so nobody repeats it:** faking a real 3/4 turn by
+horizontally squeezing the head band. The face narrows, but the hair and the jaw sit far from the face
+centre, so inside the neck blend the drawing shows a doubled contour — two ears, two hair edges. Three
+settings were rendered (`narrow 0.16/0.24/0.32`) and all of them ghost. A genuine turn needs a
+`head.34` key per pose or a face mesh warp; a front drawing can only tip, lean and look.
