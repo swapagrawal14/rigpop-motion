@@ -1,0 +1,18 @@
+{
+ "box": {
+  "x": -80,
+  "y": 80,
+  "w": 1060,
+  "h": 1590
+ },
+ "plates": [
+  "sky.png",
+  "hallway.png",
+  "wall.png",
+  "fridge-open.png",
+  "fridge-empty.png",
+  "counter.png",
+  "fg.png"
+ ],
+ "glassPixels": 25330
+}
