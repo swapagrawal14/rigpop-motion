@@ -1,0 +1,327 @@
+{
+ "name": "kabir",
+ "base": "kabir",
+ "brows": "vector",
+ "generated": "2026-11-01",
+ "parts": {
+  "head.front": {
+   "file": "parts/head.front.png",
+   "w": 470,
+   "h": 459,
+   "face": {
+    "cx": 252.38381822587772,
+    "cy": 302.62,
+    "rx": 145.5,
+    "ry": 151.5,
+    "top": 139,
+    "bottom": 442
+   }
+  },
+  "head.34": {
+   "file": "parts/head.34.png",
+   "w": 447,
+   "h": 499,
+   "face": {
+    "cx": 274.61786529680364,
+    "cy": 297.84,
+    "rx": 125,
+    "ry": 148,
+    "top": 138,
+    "bottom": 434
+   }
+  },
+  "torso": {
+   "file": "parts/torso.png",
+   "w": 319,
+   "h": 330,
+   "neckTop": {
+    "x": 158,
+    "y": 11
+   },
+   "neckW": 53,
+   "shirtTop": 35,
+   "hem": 318,
+   "hip": {
+    "x": 160,
+    "y": 298.19
+   },
+   "shoulderL": {
+    "x": 87.22,
+    "y": 63
+   },
+   "shoulderR": {
+    "x": 229.78,
+    "y": 63
+   },
+   "width": 207
+  },
+  "upperArm": {
+   "file": "parts/upperArm.png",
+   "w": 139,
+   "h": 267,
+   "top": {
+    "x": 75.5,
+    "y": 46.79999944762361
+   },
+   "bottom": {
+    "x": 76,
+    "y": 223.87304232343547
+   },
+   "wTop": 95.99999870029086,
+   "wBot": 85.00460629779886,
+   "wMid": 125.00032741114062,
+   "tilt": 10
+  },
+  "forearm": {
+   "file": "parts/forearm.png",
+   "w": 89,
+   "h": 293,
+   "top": {
+    "x": 48.5,
+    "y": 36.176862113210106
+   },
+   "bottom": {
+    "x": 50.5,
+    "y": 262.20081028472606
+   },
+   "wTop": 71.00438144284732,
+   "wBot": 55.99809344770338,
+   "wMid": 69.01009808595245,
+   "tilt": 0.6
+  },
+  "thigh": {
+   "file": "parts/thigh.png",
+   "w": 130,
+   "h": 239,
+   "top": {
+    "x": 64,
+    "y": 54.87844680331071
+   },
+   "bottom": {
+    "x": 61,
+    "y": 191.20001675887096
+   },
+   "wTop": 115.00811012543696,
+   "wBot": 95.99996056736248,
+   "wMid": 110.01808228888206,
+   "tilt": 0
+  },
+  "shin": {
+   "file": "parts/shin.png",
+   "w": 123,
+   "h": 241,
+   "top": {
+    "x": 61,
+    "y": 52.75358617945691
+   },
+   "bottom": {
+    "x": 61.5,
+    "y": 189.37189263053844
+   },
+   "wTop": 110.00843806931039,
+   "wBot": 105.00731145755661,
+   "wMid": 102.00167490341465,
+   "tilt": -0.7
+  },
+  "hand.open": {
+   "file": "parts/hand.open.png",
+   "w": 146,
+   "h": 224,
+   "wrist": {
+    "x": 63,
+    "y": 31.439999999999998
+   },
+   "len": 212,
+   "width": 134
+  },
+  "hand.fist": {
+   "file": "parts/hand.fist.png",
+   "w": 132,
+   "h": 188,
+   "wrist": {
+    "x": 55.5,
+    "y": 27.119999999999997
+   },
+   "len": 176,
+   "width": 120
+  },
+  "hand.point": {
+   "file": "parts/hand.point.png",
+   "w": 144,
+   "h": 224,
+   "wrist": {
+    "x": 53.5,
+    "y": 31.439999999999998
+   },
+   "len": 212,
+   "width": 132
+  },
+  "foot": {
+   "file": "parts/foot.png",
+   "w": 205,
+   "h": 124,
+   "ankle": {
+    "x": 87.25,
+    "y": 30.64
+   },
+   "sole": 117,
+   "len": 193
+  },
+  "shades": {
+   "file": "parts/shades.png",
+   "w": 449,
+   "h": 177,
+   "c": {
+    "x": 224,
+    "y": 88
+   },
+   "width": 427
+  },
+  "eyes.open": {
+   "file": "parts/eyes.open.png",
+   "w": 266,
+   "h": 94,
+   "c": {
+    "x": 132.5,
+    "y": 46.5
+   },
+   "width": 258,
+   "height": 86
+  },
+  "eyes.half": {
+   "file": "parts/eyes.half.png",
+   "w": 268,
+   "h": 95,
+   "c": {
+    "x": 133.5,
+    "y": 47
+   },
+   "width": 260,
+   "height": 87
+  },
+  "eyes.closed": {
+   "file": "parts/eyes.closed.png",
+   "w": 277,
+   "h": 43,
+   "c": {
+    "x": 138,
+    "y": 21
+   },
+   "width": 269,
+   "height": 35
+  },
+  "eyes.closed2": {
+   "file": "parts/eyes.closed2.png",
+   "w": 255,
+   "h": 38,
+   "c": {
+    "x": 127,
+    "y": 18.5
+   },
+   "width": 247,
+   "height": 30
+  },
+  "eyes.happy": {
+   "file": "parts/eyes.happy.png",
+   "w": 260,
+   "h": 60,
+   "c": {
+    "x": 129.5,
+    "y": 29.5
+   },
+   "width": 252,
+   "height": 52
+  },
+  "mouth.A": {
+   "file": "parts/mouth.A.png",
+   "w": 130,
+   "h": 173,
+   "c": {
+    "x": 64.5,
+    "y": 86
+   },
+   "width": 122,
+   "height": 165
+  },
+  "mouth.E": {
+   "file": "parts/mouth.E.png",
+   "w": 192,
+   "h": 67,
+   "c": {
+    "x": 95.5,
+    "y": 33
+   },
+   "width": 184,
+   "height": 59
+  },
+  "mouth.O": {
+   "file": "parts/mouth.O.png",
+   "w": 68,
+   "h": 86,
+   "c": {
+    "x": 33.5,
+    "y": 42.5
+   },
+   "width": 60,
+   "height": 78
+  },
+  "mouth.M": {
+   "file": "parts/mouth.M.png",
+   "w": 143,
+   "h": 48,
+   "c": {
+    "x": 71,
+    "y": 23.5
+   },
+   "width": 135,
+   "height": 40
+  },
+  "mouth.smile": {
+   "file": "parts/mouth.smile.png",
+   "w": 183,
+   "h": 72,
+   "c": {
+    "x": 91,
+    "y": 35.5
+   },
+   "width": 175,
+   "height": 64
+  },
+  "mouth.laugh": {
+   "file": "parts/mouth.laugh.png",
+   "w": 213,
+   "h": 153,
+   "c": {
+    "x": 106,
+    "y": 76
+   },
+   "width": 205,
+   "height": 145
+  },
+  "mouth.frown": {
+   "file": "parts/mouth.frown.png",
+   "w": 151,
+   "h": 55,
+   "c": {
+    "x": 75,
+    "y": 27
+   },
+   "width": 143,
+   "height": 47
+  },
+  "mouth.smirk": {
+   "file": "parts/mouth.smirk.png",
+   "w": 166,
+   "h": 80,
+   "c": {
+    "x": 82.5,
+    "y": 39.5
+   },
+   "width": 158,
+   "height": 72
+  }
+ },
+ "skin": "#d58c60",
+ "skinShade": "#a6623f",
+ "hair": "#1f2228"
+}

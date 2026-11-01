@@ -1,0 +1,80 @@
+{
+  "name": "chhoti",
+  "base": "chhoti",
+  "about": "Chhoti: little sister, big round head, black hair with bangs and two pigtails tied with purple bows, purple dress, yellow sandals.",
+  "sheets": {
+    "head": {
+      "file": "sheets/head.png",
+      "minArea": 1500,
+      "gap": 14,
+      "layout": [
+        [
+          "head.front",
+          "head.34"
+        ]
+      ]
+    },
+    "body": {
+      "file": "sheets/body.png",
+      "minArea": 1500,
+      "gap": 8,
+      "layout": [
+        [
+          "torso",
+          "upperArm",
+          "forearm"
+        ],
+        [
+          "hand.open",
+          "hand.fist",
+          "hand.point"
+        ],
+        [
+          "thigh",
+          "shin",
+          "foot"
+        ]
+      ]
+    },
+    "face": {
+      "file": "sheets/face.png",
+      "minArea": 800,
+      "gap": 18,
+      "layout": [
+        [
+          "eyes.open*2",
+          "eyes.half*2",
+          "eyes.closed*2"
+        ],
+        [
+          "eyes.closed2",
+          "eyes.closed3",
+          "eyes.happy"
+        ],
+        [
+          "mouth.A",
+          "mouth.E",
+          "mouth.O",
+          "mouth.M"
+        ],
+        [
+          "mouth.smile",
+          "mouth.laugh>0.47",
+          "mouth.frown",
+          "mouth.smirk>0.7"
+        ]
+      ]
+    }
+  },
+  "brows": "painted",
+  "alias": {
+    "thigh": "forearm"
+  },
+  "style": "STYLE BIBLE: flat-vector Indian cartoon (like the Indian animated short 'Mid Night Craving'), bold even dark plum-black ink outline around every shape, flat colour fills with exactly one hard-edged cel-shadow tone per shape (light from top-left), warm tan-brown skin (#e4a77a, shadow #bb7856), chibi proportions with a very big round head, clean crisp edges, no text, no letters, no logos, no watermark.",
+  "prompts": {
+    "model": "Character model sheet of CHHOTI, a cheeky little Indian girl of about 6 cartoon character. STYLE BIBLE: flat-vector Indian cartoon (like the Indian animated short 'Mid Night Craving'), bold even dark plum-black ink outline around every shape, flat colour fills with exactly one hard-edged cel-shadow tone per shape (light from top-left), warm tan-brown skin (#e4a77a, shadow #bb7856), chibi proportions with a very big round head, clean crisp edges, no text, no letters, no logos, no watermark. DESIGN: black hair with straight bangs and two short bunched pigtails each tied with a purple bow (#c04fd6), big eyes with lashes, rosy cheeks, short purple dress (#b46ad8), bare legs, yellow sandals. LAYOUT: front, three-quarter, side view, full body, same scale, flat chroma-green #00FF00. [refs: a v2 still of Chhoti, the style reference]",
+    "head": "Cut-out animation HEAD PART SHEET for the little girl CHHOTI (same character and style as the references). STYLE BIBLE: flat-vector Indian cartoon (like the Indian animated short 'Mid Night Craving'), bold even dark plum-black ink outline around every shape, flat colour fills with exactly one hard-edged cel-shadow tone per shape (light from top-left), warm tan-brown skin (#e4a77a, shadow #bb7856), chibi proportions with a very big round head, clean crisp edges, no text, no letters, no logos, no watermark. ONLY TWO HEADS, no bodies, on flat chroma-green #00FF00: LEFT her head from the front with bangs, pigtails and purple bows, both ears, a completely BLANK FACE (no eyes, brows, nose, mouth, blush); RIGHT the same blank head turned three-quarters to the right. [refs: first head sheet, body sheet]",
+    "body": "Cut-out animation BODY PART SHEET for the little girl CHHOTI shown in the reference image. STYLE BIBLE: flat-vector Indian cartoon (like the Indian animated short 'Mid Night Craving'), bold even dark plum-black ink outline around every shape, flat colour fills with exactly one hard-edged cel-shadow tone per shape (light from top-left), warm tan-brown skin (#e4a77a, shadow #bb7856), chibi proportions with a very big round head, clean crisp edges, no text, no letters, no logos, no watermark. Isolated parts in a 3x3 grid on flat chroma-green #00FF00, same scale, each limb segment perfectly VERTICAL with its upper joint at the top and rounded ends: torso (purple A-line dress + neck stub, no arms/sleeves/head/legs), upper arm (short purple puffed sleeve + bare upper arm), forearm; open hand, fist, pointing hand (fingers down, wrist at top); thigh, shin (bare skin), yellow sandal from the side, toe right. [ref: model sheet crop]",
+    "face": "Cut-out animation FACE KIT SHEET for the little girl CHHOTI from the reference images. STYLE BIBLE: flat-vector Indian cartoon (like the Indian animated short 'Mid Night Craving'), bold even dark plum-black ink outline around every shape, flat colour fills with exactly one hard-edged cel-shadow tone per shape (light from top-left), warm tan-brown skin (#e4a77a, shadow #bb7856), chibi proportions with a very big round head, clean crisp edges, no text, no letters, no logos, no watermark. Large features alone in a 4x3 grid on flat chroma-green #00FF00, no faces, no skin patches, no labels: eye PAIRS with her lashes, no brows (open with pupils, half-closed, closed lash lines, happy arcs); mouths A, E, O, M; closed smile, big laugh, small frown, smug smirk. [refs: head sheet, model sheet crop]"
+  }
+}

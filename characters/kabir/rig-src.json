@@ -1,0 +1,86 @@
+{
+  "name": "kabir",
+  "base": "kabir",
+  "about": "Kabir: teenage boy, very big round head, messy wavy black hair, round gold sunglasses, red 'NO SLEEP' tee (the print is baked in code: the image model draws no text), navy jeans, off-white sneakers.",
+  "torsoText": {
+    "text": "NO SLEEP",
+    "color": "#f3cdbd",
+    "size": 0.2,
+    "y": 0.42,
+    "rot": -0.06
+  },
+  "sheets": {
+    "head": {
+      "file": "sheets/head.png",
+      "minArea": 1500,
+      "gap": 14,
+      "layout": [
+        [
+          "head.front",
+          "head.34"
+        ],
+        [
+          "skip",
+          "shades"
+        ]
+      ]
+    },
+    "body": {
+      "file": "sheets/body.png",
+      "minArea": 1500,
+      "gap": 8,
+      "layout": [
+        [
+          "torso",
+          "upperArm",
+          "forearm"
+        ],
+        [
+          "hand.open",
+          "hand.fist",
+          "hand.point"
+        ],
+        [
+          "thigh",
+          "shin",
+          "foot"
+        ]
+      ]
+    },
+    "face": {
+      "file": "sheets/face.png",
+      "minArea": 40,
+      "gap": 14,
+      "layout": [
+        [
+          "eyes.open*2",
+          "eyes.half*2",
+          "eyes.closed*2"
+        ],
+        [
+          "eyes.closed2*2",
+          "eyes.happy*2"
+        ],
+        [
+          "mouth.A",
+          "mouth.E",
+          "mouth.O",
+          "mouth.M"
+        ],
+        [
+          "mouth.smile",
+          "mouth.laugh",
+          "mouth.frown",
+          "mouth.smirk"
+        ]
+      ]
+    }
+  },
+  "style": "STYLE BIBLE: flat-vector Indian cartoon (like the Indian animated short 'Mid Night Craving'), bold even dark plum-black ink outline around every shape, flat colour fills with exactly one hard-edged cel-shadow tone per shape (light from top-left), warm tan-brown skin (#dd9a6c, shadow #b26c4a), chibi proportions with a very big round head, clean crisp edges, no text, no letters, no logos, no watermark.",
+  "prompts": {
+    "model": "Character model sheet of KABIR, a teenage Indian boy cartoon character. STYLE BIBLE: flat-vector Indian cartoon (like the Indian animated short 'Mid Night Craving'), bold even dark plum-black ink outline around every shape, flat colour fills with exactly one hard-edged cel-shadow tone per shape (light from top-left), warm tan-brown skin (#dd9a6c, shadow #b26c4a), chibi proportions with a very big round head, clean crisp edges, no text, no letters, no logos, no watermark. DESIGN: messy wavy black hair with a few loose strands sticking up on top and curly side locks over the ears, round gold-rimmed sunglasses with dark lenses pushed UP onto his hair, big friendly eyes with small black pupils, small nose, a plain red short-sleeve t-shirt with NO print, navy-blue jeans, off-white sneakers. LAYOUT: the same character three times side by side, full body: front, three-quarter, side view. Same scale, feet on one line, flat solid pure chroma-green #00FF00 background. [refs: a v2 still of Kabir, the style reference]",
+    "head": "Cut-out animation HEAD PART SHEET for the boy KABIR shown in the reference image. STYLE BIBLE: flat-vector Indian cartoon (like the Indian animated short 'Mid Night Craving'), bold even dark plum-black ink outline around every shape, flat colour fills with exactly one hard-edged cel-shadow tone per shape (light from top-left), warm tan-brown skin (#dd9a6c, shadow #b26c4a), chibi proportions with a very big round head, clean crisp edges, no text, no letters, no logos, no watermark. On flat chroma-green #00FF00, isolated parts with wide gaps: TOP-LEFT his head from the front with hair and both ears but a completely BLANK FACE (no eyes, brows, nose, mouth, no sunglasses); TOP-RIGHT the same blank head turned three-quarters to the right; BOTTOM his round gold-rimmed sunglasses alone. [ref: model sheet crop]",
+    "body": "Cut-out animation BODY PART SHEET for the boy KABIR shown in the reference image. STYLE BIBLE: flat-vector Indian cartoon (like the Indian animated short 'Mid Night Craving'), bold even dark plum-black ink outline around every shape, flat colour fills with exactly one hard-edged cel-shadow tone per shape (light from top-left), warm tan-brown skin (#dd9a6c, shadow #b26c4a), chibi proportions with a very big round head, clean crisp edges, no text, no letters, no logos, no watermark. Isolated parts in a 3x3 grid on flat chroma-green #00FF00, same scale, each limb segment perfectly VERTICAL with its upper joint at the top and rounded ends: torso (red tee body + neck stub, no arms/sleeves/head), upper arm (red short sleeve + bare upper arm), forearm; open hand, fist, pointing hand (fingers down, wrist at top); thigh, shin (navy jeans), sneaker from the side, toe right. [ref: model sheet crop]",
+    "face": "Cut-out animation FACE KIT SHEET for the boy KABIR from the reference images. STYLE BIBLE: flat-vector Indian cartoon (like the Indian animated short 'Mid Night Craving'), bold even dark plum-black ink outline around every shape, flat colour fills with exactly one hard-edged cel-shadow tone per shape (light from top-left), warm tan-brown skin (#dd9a6c, shadow #b26c4a), chibi proportions with a very big round head, clean crisp edges, no text, no letters, no logos, no watermark. Large features alone in a 4x3 grid on flat chroma-green #00FF00, no faces, no skin patches, no labels: eye PAIRS without brows (open with pupils, half-closed, closed lash lines, happy arcs); mouths A, E, O, M; closed smile, big laugh, small frown, smug smirk. [refs: head sheet, model sheet crop]"
+  }
+}
