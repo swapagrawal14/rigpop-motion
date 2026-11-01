@@ -1,0 +1,26 @@
+{
+ "action": "sip",
+ "mode": "full",
+ "from": "pose.png",
+ "scale": 1,
+ "standPx": 673,
+ "bustScale": 1,
+ "width": 254,
+ "height": 673,
+ "keys": [
+  {
+   "file": "key0.png",
+   "source": "pose.png",
+   "foot": {
+    "x": 155.77594643317022,
+    "y": 668
+   },
+   "w": 254,
+   "h": 673,
+   "pose": 0,
+   "t": 0.4,
+   "lift": 0,
+   "face": {}
+  }
+ ]
+}

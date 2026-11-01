@@ -1,0 +1,26 @@
+{
+ "action": "laugh",
+ "mode": "full",
+ "from": "pose.png",
+ "scale": 1,
+ "standPx": 946,
+ "bustScale": 1,
+ "width": 548,
+ "height": 946,
+ "keys": [
+  {
+   "file": "key0.png",
+   "source": "pose.png",
+   "foot": {
+    "x": 255.5951740139211,
+    "y": 941
+   },
+   "w": 548,
+   "h": 946,
+   "pose": 0,
+   "t": 0.4,
+   "lift": 0,
+   "face": {}
+  }
+ ]
+}

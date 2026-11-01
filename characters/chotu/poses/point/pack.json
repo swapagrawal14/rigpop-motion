@@ -1,0 +1,26 @@
+{
+ "action": "point",
+ "mode": "full",
+ "from": "pose.png",
+ "scale": 1,
+ "standPx": 1024,
+ "bustScale": 1,
+ "width": 513,
+ "height": 1024,
+ "keys": [
+  {
+   "file": "key0.png",
+   "source": "pose.png",
+   "foot": {
+    "x": 256.43971588874297,
+    "y": 1019
+   },
+   "w": 513,
+   "h": 1024,
+   "pose": 0,
+   "t": 0.4,
+   "lift": 0,
+   "face": {}
+  }
+ ]
+}

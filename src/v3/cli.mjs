@@ -2,7 +2,8 @@
 //
 //   set                                build the painted night-kitchen plates + props
 //   rig <character> [--prompts]        auto-rig characters/<character> from its part sheets
-//   poses <character> <action> [--prompt]  cut + normalise a pose pack (jump, ...)
+//   poses <character> <action> [--prompt]  cut + normalise a pose pack (jump, ...), then patch its faces
+//   faces <character> [pose]           re-cut blink + mouth patches for existing pose packs
 //   render <script.md> [-o out.mp4] [--from s] [--to s] [--crf n]
 //   still  <script.md> [-t 1,2] [-o dir] | --sheet 2 [-o sheet.jpg]
 //   strip  <script.md> -t 30.1 [-n 6] [--step 0.0667] [-o strip.jpg]   consecutive frames
@@ -47,10 +48,23 @@ async function load(file) {
     if (r === 'vector') return RIGS[c.base || String(c.name || '').toLowerCase()];
     return null;
   };
+  {
+    // project-local gesture clips (registered into CLIPS on import)
+    const { pathToFileURL } = await import('node:url');
+    const f = path.resolve('tools/clips/chai.mjs');
+    if (fs.existsSync(f)) await import(pathToFileURL(f).href);
+  }
   const t0 = Date.now();
   const S = await compile(src, { baseDir: path.dirname(path.resolve(file)), log: (m) => log(`  ${m}`), resolveRig });
   let hooks = {};
   if (String(meta.scene || '').startsWith('painted')) { const { loadSet } = await import('./plates.mjs'); hooks = await loadSet(); }
+  if (String(meta.scene || '').startsWith('painted')) { const { loadSet } = await import('./plates.mjs'); hooks = await loadSet(); }
+  else if (meta.scene) {
+    // a project-local set: tools/scenes/<scene>.mjs exporting scene hooks (and drawHeld)
+    const { pathToFileURL } = await import('node:url');
+    const f = path.resolve('tools/scenes', String(meta.scene) + '.mjs');
+    if (fs.existsSync(f)) { const m = await import(pathToFileURL(f).href); hooks = { scene: m.scene, drawHeld: m.drawHeld }; log(`  set: ${meta.scene}`); }
+  }
   const E = createEngine(S, hooks);
   log(`compiled ${path.basename(file)}: ${S.DUR.toFixed(2)} s, ${S.lines.length} lines, ${S.shots.length} shots, ${[...S.actors.values()].reduce((a, A) => a + A.clips.length, 0)} actions (${Date.now() - t0} ms)`);
   return { S, E };
@@ -79,6 +93,11 @@ if (cmd === 'set') {
     const src = JSON.parse(fs.readFileSync(path.join(dir, 'rig-src.json'), 'utf8'));
     console.log(posePrompt(src.about, action));
   } else await cutPack(dir, action, { log });
+} else if (cmd === 'faces') {
+  const name = pos[0]; if (!name) { log('usage: rigpop-motion faces <character> [pose]'); process.exit(2); }
+  const { patchPoses } = await import('./facepatch.mjs');
+  const n = await patchPoses(RP('characters', name), { only: pos[1] || null, log });
+  log(`  ${n} key(s) with a live face`);
 } else if (cmd === 'render' && (flag('--part') || flag('--mux'))) {
   // long renders in parts: --part 1/3 ... --part 3/3, then --mux 3 (concat + the audio mix)
   const file = pos[0];
@@ -146,6 +165,6 @@ if (cmd === 'set') {
   for (let i = 0; i < n; i++) { const t = t0 + i * step; E.render(t); g.drawImage(E.canvas, i * w, 0, w, h); g.fillStyle = '#fff'; g.font = '16px sans-serif'; g.fillText(`${t.toFixed(2)}s`, i * w + 6, h + 18); }
   const out = flag('-o', 'out/strip.jpg'); fs.writeFileSync(out, c.toBuffer('image/jpeg', 86)); log(`strip -> ${out}`);
 } else {
-  log('commands: set | rig | poses | render | still | strip');
+  log('commands: set | rig | poses | faces | render | still | strip');
   process.exit(2);
 }

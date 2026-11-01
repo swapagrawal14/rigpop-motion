@@ -19,6 +19,11 @@ import { clamp, lerp, v } from '../v2/util.mjs';
 import { RIGS, armAndSleeve } from '../v2/rig.mjs';
 
 const RES = 2.4; // strip pixels per rig unit (ECU shots run at ~3x zoom)
+// which patch a v2 mouth shape asks for (\`open\` scales it at draw time)
+const MOUTH_TAG = {
+  oh: 'A', shock: 'A', laugh: 'A', chew: 'M', mbp: 'M', ee: 'E', grin: 'E',
+  rest: 'rest', smile: 'rest', smirk: 'rest', frown: 'rest', wobble: 'rest',
+};
 
 export async function loadImageRig(dir) {
   const rig = JSON.parse(fs.readFileSync(path.join(dir, 'rig.json'), 'utf8'));
@@ -62,6 +67,17 @@ export async function loadImageRig(dir) {
     const f = path.join(pd, a, 'pack.json'); if (!fs.existsSync(f)) continue;
     const pack = JSON.parse(fs.readFileSync(f, 'utf8'));
     pack.img = []; for (const k of pack.keys) pack.img.push(await loadImage(fs.readFileSync(path.join(pd, a, k.file))));
+    // face patches (tools/face-patches.mjs): blinks and lip-sync for a drawn pose
+    pack.face = []; for (const k of pack.keys) {
+      const f = { blink: null, mouth: null };
+      if (k.face && k.face.blink) f.blink = await loadImage(fs.readFileSync(path.join(pd, a, k.face.blink.file)));
+      if (k.face && k.face.mouth) {
+        f.mouth = { rect: k.face.mouth, map: {}, rest: null };
+        for (const [tag, file] of Object.entries(k.face.mouth.files)) f.mouth.map[tag] = await loadImage(fs.readFileSync(path.join(pd, a, file)));
+        f.mouth.rest = f.mouth.map.rest || f.mouth.map.M || Object.values(f.mouth.map)[0];
+      }
+      pack.face.push(f.blink || f.mouth ? f : null);
+    }
     IR.packs[a] = pack;
   }
   return R;
@@ -103,10 +119,13 @@ function buildArmStrip(IR, name, a, b, rootW, sleeveLen) {
   g.save(); g.beginPath(); g.rect(0, yS + skip * RES, W, H); g.clip();
   g.translate(cx, yS); g.scale(k * RES * xk, k * RES); g.drawImage(IR.img[name], -L.top.x, -L.top.y); g.restore();
   // shadow of the sleeve on the arm root, fading out a little past the hem
+  // (rig.json "armShadow": false skips it: when the sleeve is a long one the whole arm is cloth)
+  if (IR.rig.armShadow !== false) {
   g.save(); g.globalCompositeOperation = 'source-atop';
   const gr = g.createLinearGradient(0, yS, 0, yS + (sleeveLen + rootW * 0.5) * RES);
   gr.addColorStop(0, 'rgba(60,25,20,0.6)'); gr.addColorStop(0.7, 'rgba(60,25,20,0.42)'); gr.addColorStop(1, 'rgba(60,25,20,0)');
   g.fillStyle = gr; g.fillRect(0, 0, W, H); g.restore();
+  }
   return { canvas: c, W, H, cx, yS, yE, yW, a, b, width: rootW };
 }
 
@@ -341,11 +360,36 @@ export function drawPack(g, IR, R, P) {
   const pk = P.pack, pack = IR.packs[pk.name]; if (!pack) return false;
   const st = packState(pack, pk.u, pk.d);
   const K = pack.keys[st.i], img = pack.img[st.i];
-  const k = pack.scale * (pack.standPx ? IR.standH / pack.standPx : R.headRx / pack.headRx);
+  // bust packs (waist-up drawings) are sized by head width and stand on the hip; full-body packs
+  // by standing height and stand on the floor line
+  const bust = pack.mode === 'bust';
+  const k = bust ? (pack.bustScale || (R.headRx * 1.18) / pack.headRx) : pack.scale * (pack.standPx ? IR.standH / pack.standPx : R.headRx / pack.headRx);
+  if (bust) g.translate(0, -(R.thigh + R.shin) * 0.965 + (pack.hipDrop ?? 10));
+  const breath = (P.breath || 0) * 1.4;              // always-on idle, so the drawing breathes
+  const sway = (P.headTilt || 0) * 2.2 + (P.hipDX || 0) * 0.15;
   const draw = (alpha, dy, sy) => {
-    g.save(); g.globalAlpha *= alpha; g.translate(0, -st.lift + dy); g.scale(k * (st.sx ?? 1) / Math.sqrt(sy), k * sy * (st.sy ?? 1));
+    g.save(); g.globalAlpha *= alpha; g.translate(sway, -st.lift + dy - breath); g.scale(k * (st.sx ?? 1) / Math.sqrt(sy), k * sy * (st.sy ?? 1));
     g.drawImage(img, -K.foot.x, -K.foot.y); g.restore();
   };
+  // a drawn pose is a still image, so the rig's own face would never show: paste the patch that
+  // matches the moment (a blink, or the mouth shape the speech is asking for) over the drawing
+  const patch = IR.packs[pk.name].face && IR.packs[pk.name].face[st.i];
+  const drawFace = () => {
+    if (!patch) return;
+    const F = P.face;
+    g.save(); g.scale(k * (st.sx ?? 1), k);
+    const px = (box) => [-K.foot.x + box.x, -K.foot.y + box.y];
+    if (patch.blink && (F.blink ?? 0) > 0.45) {
+      const b = K.face.blink, [x, y] = px(b);
+      g.drawImage(patch.blink, x, y, b.w, b.h);
+    } else if (patch.mouth) {
+      const m = patch.mouth.rect, [x, y] = px(m);
+      const img2 = patch.mouth.map[MOUTH_TAG[F.mouth] || 'rest'] || patch.mouth.rest;
+      if (img2) g.drawImage(img2, x, y, m.w, m.h);
+    }
+    g.restore();
+  };
+  if (patch) drawFace();
   // smear in-between: when the body moves fast, trail a stretched ghost and speed lines
   const vel = st.vel; // units per second, +down
   if (Math.abs(vel) > 250) {
@@ -357,6 +401,7 @@ export function drawPack(g, IR, R, P) {
     stroke(g, 4, INK); g.restore();
   }
   draw(1, 0, 1 + clamp(vel / 5000, -0.12, 0.18));
+  if (patch) drawFace();
   return true;
 }
 
@@ -383,7 +428,11 @@ export function packState(pack, u, d) {
 /* ------------------------------------------------------------------ entry */
 export function drawImageCharacter(g, R, P, J, { pass = 'body', t = 0, drawProp = null } = {}) {
   const IR = R.image;
-  if (P.pack && pass === 'body' && IR.packs[P.pack.name]) { drawPack(g, IR, R, P); return; }
+  if (P.pack && pass === 'body' && IR.packs[P.pack.name]) {
+    const pk = IR.packs[P.pack.name];
+    if (pk.mode === 'bust' && !P.legs.hidden) drawLegs(g, IR, R, P, J); // the drawing is waist-up
+    drawPack(g, IR, R, P); return;
+  }
   if (P.pack && IR.packs[P.pack.name]) return;
   if (pass === 'body') {
     if (!P.legs.hidden) drawLegs(g, IR, R, P, J);

@@ -135,6 +135,9 @@ export async function cutPack(charDir, action, { log = console.error } = {}) {
     sfx: A.sfx || [],
   };
   fs.writeFileSync(path.join(dir, 'pack.json'), JSON.stringify(pack, null, 1));
+  // a cut pack is not finished until its faces are alive: blinks + lip-sync mouth patches
+  const { patchPoses } = await import('./facepatch.mjs');
+  await patchPoses(charDir, { only: action, log });
   log(`  pack.json: ${pack.keys.length} keys from ${files.length} poses, face width ${med.toFixed(0)} px (size drift ${faces.map((x) => (x / med).toFixed(2)).join(' ')})`);
   return pack;
 }

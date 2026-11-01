@@ -1,0 +1,81 @@
+{
+  "name": "bunty",
+  "base": "kabir",
+  "about": "Bunty: a lanky young man in his twenties, cobalt-blue baseball cap, dark curly hair sticking out at the sides, small round black-framed glasses, a thick black walrus moustache, a big oversized bright orange crew-neck sweater, cream wide-leg trousers rolled at the cuff, white low-top sneakers with hot-pink laces and soles. Art style: flat marker-ink doodle, bold even cobalt-blue ink outlines, flat colour fills, cream paper background.",
+  "sheets": {
+    "head": {
+      "file": "sheets/head.png",
+      "minArea": 3000,
+      "gap": 16,
+      "layout": [
+        [
+          "head.front",
+          "head.34",
+          "skip",
+          "skip"
+        ],
+        [
+          "skip",
+          "skip",
+          "shades"
+        ]
+      ]
+    },
+    "body": {
+      "file": "sheets/body.png",
+      "minArea": 2500,
+      "gap": 12,
+      "layout": [
+        [
+          "torso",
+          "upperArm",
+          "forearm",
+          "hand.open",
+          "hand.fist",
+          "hand.point"
+        ],
+        [
+          "skip",
+          "thigh",
+          "shin",
+          "skip",
+          "foot"
+        ]
+      ]
+    },
+    "face": {
+      "file": "sheets/face.png",
+      "minArea": 120,
+      "gap": 28,
+      "layout": [
+        [
+          "eyes.open*2",
+          "eyes.half*2",
+          "eyes.closed*2"
+        ],
+        [
+          "eyes.happy*2",
+          "skip",
+          "skip*2",
+          "eyes.closed2*2"
+        ],
+        [
+          "mouth.A",
+          "mouth.E",
+          "mouth.O",
+          "mouth.M"
+        ],
+        [
+          "mouth.smile",
+          "mouth.laugh",
+          "mouth.frown",
+          "mouth.smirk"
+        ]
+      ]
+    }
+  },
+  "style": "STYLE BIBLE: flat marker-ink cartoon illustration, hand-drawn editorial doodle style, bold even cobalt-blue (#1a3ff5) ink outline of constant weight around every shape, flat solid colour fills, no gradients, no shading, no texture, palette of cobalt blue, bright orange (#ff5a1f), warm cream (#f7f2e7), hot pink (#ff3d8b), black hair, warm tan skin (#e8b48c), simple chunky shapes, crisp edges, no text, no letters, no logos, no watermark.",
+  "prompts": {
+    "model": "Character model sheet of BUNTY, a lanky young Indian man cartoon character. STYLE BIBLE: flat marker-ink cartoon illustration, hand-drawn editorial doodle style, bold even cobalt-blue (#1a3ff5) ink outline of constant weight around every shape, flat solid colour fills, no gradients, no shading, no texture, palette of cobalt blue, bright orange (#ff5a1f), warm cream (#f7f2e7), hot pink (#ff3d8b), black hair, warm tan skin (#e8b48c), simple chunky shapes, crisp edges, no text, no letters, no logos, no watermark. DESIGN: dark navy-black curly hair sticking out at both sides under a cobalt-blue baseball cap, small round black-framed glasses, a thick black walrus moustache, an oversized bright orange crew-neck sweater, cream wide-leg trousers with rolled cuffs, white low-top sneakers with hot-pink laces. LAYOUT: the same character three times side by side, full body: front, three-quarter, side view, same scale, feet on one line, flat solid pure chroma-green #00FF00 background."
+  }
+}

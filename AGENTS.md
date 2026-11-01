@@ -9,12 +9,18 @@
 4. **Then add motion between poses.**
    - Ease in and out of every key (no linear moves). Use anticipation before a big move and overshoot plus a settle after it.
    - Hold each key 3-8 frames. Cross-dissolve or smear one in-between frame on fast changes; never hard-pop between very different poses.
-   - Keep the face alive on top of the pose: blinks, eye darts, lip-sync mouth patches.
+   - Keep the face alive on top of the pose: blinks, eye darts, lip-sync mouth patches. A pose pack
+     replaces the drawing, so its face has to come back as patches — `rigpop-motion poses` writes
+     `keyN.blink.png` and `keyN.m.*.png` for you; `rigpop-motion faces <character>` re-cuts them.
+     Never ship a pack whose keys have no `face` block: those characters stand there dead.
    - Add secondary motion (breathing, a slight body sway, hair or cloth follow-through) as small offsets on the current pose, never as limb swings.
 5. **Camera and cuts last:** shot choice, push-ins, shake on impacts.
 
 ## Hard rules
 - **No visible puppet joints.** No shoulder balls, sleeve caps or joint circles. Sleeves belong to the torso; arms come out from under them.
+- **If the character's arms are already painted into the body drawing, do not rig puppet arms on
+  top of it** — you get two sets of arms. Use a pose pack for that character (`rigpop-motion poses`),
+  and let the drawn art carry the gesture.
 - A puppet/IK arm move is allowed only for **tiny** motions (a small stir loop, a hand resting) and only between two drawn poses. If a move is bigger than about 30°, generate a pose instead.
 - Every action in a script must name a pose pack (`[K pose-pack stir 2s]`). If no pack exists, generate one before rendering.
 - Same character everywhere: reuse the exact style-bible text and model-sheet reference in every pose prompt, and regenerate any pose whose face or outfit drifts.

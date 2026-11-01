@@ -50,6 +50,26 @@ and the engine plays them as a flip-book inside the shot.
 
 <sub>The same script beats in v2 (top) and v3 (bottom): ECU, insert on the pan, the startled jump, the payoff two-shot.</sub>
 
+### Pose packs keep their faces
+
+A pose pack replaces the whole drawing for the length of its clip, which means the rig's own face
+stack — blinks, eye darts, lip-sync — is not drawn while it plays. Every pack therefore ships a
+patch set next to its keys:
+
+```
+characters/<name>/poses/<action>/key0.png           the drawn pose
+                              key0.blink.png        lids, pasted when the blink curve fires
+                              key0.m.rest|M|A|O|E.png   the rig's mouth shapes on this drawing's own skin
+```
+
+`rigpop-motion poses` writes them automatically (`src/v3/facepatch.mjs`); re-run them by hand with
+`rigpop-motion faces <character> [pose]` after a pack is rebuilt. Two details make the mouth read as
+part of the drawing instead of a sticker: the patch is filled with the skin colour sampled just
+outside it, row by row, so the drawing's shading runs through unbroken; and the lips are placed
+under the moustache/upper-lip ink rather than over it.
+
+Pose keys also carry the rig's always-on idle (breath and sway) so a held drawing is never frozen.
+
 ### 1 · Painted set, split into parallax plates
 
 The v2 kitchen is rendered without its cast and given to the image model as a **layout guide**,

@@ -21,7 +21,9 @@
     "midnight:v3": "node src/v3/cli.mjs render scripts/midnight-maggi-v3.md -o out/midnight-maggi-v3.mp4 --crf 25",
     "v3:rig": "node src/v3/cli.mjs rig",
     "v3:poses": "node src/v3/cli.mjs poses",
-    "v3:set": "node src/v3/cli.mjs set"
+    "v3:set": "node src/v3/cli.mjs set",
+    "full-glass": "node src/v3/cli.mjs render scripts/full-glass.md -o out/full-glass.mp4 --crf 24",
+    "characters": "node tools/fix-bunty.mjs && node tools/make-chotu.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.1.0",
