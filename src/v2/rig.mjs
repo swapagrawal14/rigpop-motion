@@ -78,7 +78,7 @@ export function solve(R, P) {
     const s = sh[side];
     let tgt = typeof A.target === 'function' ? A.target(J) : A.target;
     const pole = A.pole ? (typeof A.pole === 'function' ? A.pole(J) : A.pole) : { x: s.x + sgn * 110, y: s.y + 150 };
-    J.arms[side] = solveLimb(s, tgt, R.upper, R.fore, pole);
+    J.arms[side] = limitShoulder(solveLimb(s, tgt, R.upper, R.fore, pole), tgt, R.upper, R.fore, sgn, P.lean);
     J.arms[side].ang = Math.atan2(J.arms[side].hand.y - J.arms[side].elbow.y, J.arms[side].hand.x - J.arms[side].elbow.x) + (A.handRot || 0);
   }
   // legs
@@ -103,6 +103,22 @@ export function solve(R, P) {
     J.legs[side] = solveLimb(hj, foot, R.thigh, R.shin, pole);
   }
   return J;
+}
+
+// The sleeve is part of the torso, so the upper arm may only swing inside the range the sleeve
+// opening can hide: never above the shoulder line (outward) and not far up across the chest.
+// Angles are measured in the torso frame from straight down, + toward the arm's own side.
+export const SHOULDER_RANGE = { out: 1.05, in: 0.95 };
+export function limitShoulder(L, tgt, a, b, sgn, lean = 0) {
+  const d = v.rot(v.sub(L.elbow, L.s), -lean);
+  const phi = Math.atan2(sgn * d.x, d.y);
+  const lim = clamp(phi, -SHOULDER_RANGE.in, SHOULDER_RANGE.out);
+  if (lim === phi) return L;
+  const dir = v.rot({ x: sgn * Math.sin(lim), y: Math.cos(lim) }, lean);
+  const elbow = { x: L.s.x + dir.x * a, y: L.s.y + dir.y * a };
+  const to = v.sub(tgt, elbow), n = v.len(to) || 1;
+  const hand = { x: elbow.x + (to.x / n) * b, y: elbow.y + (to.y / n) * b };
+  return { ...L, elbow, hand };
 }
 
 function solveLimb(s, t, a, b, pole) {
@@ -484,17 +500,147 @@ function drawLegs(g, R, P, J) {
   }
 }
 
+/* ------------------------------------------------------- sleeves + arms */
+// Sleeves are part of the torso drawing: a short tube hung off the shoulder line, in the torso's
+// frame (it follows lean, breath and shrugs and swings only a little with the arm). The arm
+// starts under it, so the shoulder joint is never on screen. Drawn after the torso, and again
+// after its own arm so the arm root always tucks inside.
+export function sleeveGeom(R, P, J, side) {
+  const sgn = side === 'L' ? -1 : 1, H = R.torsoH, hw = R.shoulderW / 2, tx = P.turn * 12;
+  const ts = 1 - 0.16 * Math.abs(P.turn);
+  const j0 = { x: sgn * R.shoulderX * ts + P.turn * 7, y: -H + R.shoulderInset - (side === 'L' ? P.shoulderL : P.shoulderR) - P.breath * 1.5 };
+  // how far the upper arm is swung, in the torso frame (+ = outward)
+  const S = J.arms[side], d = v.rot(v.sub(S.elbow, S.s), -P.lean);
+  const phi = Math.atan2(sgn * d.x, d.y);
+  const th0 = R.dress ? 0.42 : 0.32;
+  const th = th0 + clamp((phi - th0) * 0.3, -0.22, 0.24);
+  const u = { x: sgn * Math.sin(th), y: Math.cos(th) }, n = { x: sgn * Math.cos(th), y: -Math.sin(th) };
+  const Ls = R.upper * (R.dress ? 0.46 : 0.52);
+  const wr = R.armW * (R.dress ? 0.8 : 0.76), wh = R.armW * (R.dress ? 0.92 : 0.8);
+  const at = (a, b) => ({ x: j0.x + u.x * a + n.x * b, y: j0.y + u.y * a + n.y * b });
+  // shoulder line: a point on the torso's own top curve, so the slope runs on unbroken
+  const q = 0.42, A0 = { x: sgn * hw * 0.5 + tx, y: -H - 2 }, C0 = { x: sgn * hw, y: -H + (R.dress ? 0 : 2) }, B0 = { x: sgn * (hw + (R.dress ? 2 : 4)), y: -H + (R.dress ? 22 : 32) };
+  const Ti = { x: (1 - q) ** 2 * A0.x + 2 * (1 - q) * q * C0.x + q * q * B0.x, y: (1 - q) ** 2 * A0.y + 2 * (1 - q) * q * C0.y + q * q * B0.y };
+  const To = at(-wr * 0.32, wr), Ho = at(Ls, wh), Hi = at(Ls, -wh), Ai = at(wr * 0.35, -wr * 0.95);
+  const Tc = { x: lerp(Ti.x, To.x, 0.55), y: lerp(Ti.y, To.y, 0.35) - 1 };
+  return { j0, u, n, th, Ls, wr, wh, Ti, To, Ho, Hi, Ai, Tc, at };
+}
+
+function sleevePath(q, G) {
+  const { Ti, To, Ho, Hi, Ai, Tc, at, Ls, wr, wh } = G;
+  q.moveTo(Ti.x, Ti.y);
+  q.quadraticCurveTo(Tc.x, Tc.y, To.x, To.y);
+  const co = at(Ls * 0.45, wr * 1.06); q.quadraticCurveTo(co.x, co.y, Ho.x, Ho.y);
+  const ch = at(Ls + 3, 0); q.quadraticCurveTo(ch.x, ch.y, Hi.x, Hi.y);
+  const ci = at(Ls * 0.45, -wh * 1.0); q.quadraticCurveTo(ci.x, ci.y, Ai.x, Ai.y);
+  q.quadraticCurveTo(lerp(Ai.x, Ti.x, 0.5), lerp(Ai.y, Ti.y, 0.5) + 6, Ti.x, Ti.y);
+  q.closePath();
+}
+
+export function drawSleeve(g, R, P, J, side, { avoidHead = false } = {}) {
+  const G = sleeveGeom(R, P, J, side), sgn = side === 'L' ? -1 : 1;
+  g.save();
+  if (avoidHead) { // never paint over the chin when a big head dips toward the shoulders
+    g.beginPath(); g.rect(-4000, -4000, 8000, 8000);
+    g.ellipse(J.head.x, J.head.y, R.headRx * 1.02, R.headRy * 1.02, J.headAng, 0, TAU);
+    g.clip('evenodd');
+  }
+  g.translate(J.hip.x, J.hip.y); g.rotate(P.lean); g.scale(1, J.br);
+  const { at, Ls, wh } = G;
+  cel(g, (q) => sleevePath(q, G), R.top, R.topShade, (q) => {
+    // underside of the sleeve + a soft band inside the hem
+    const a = at(Ls * 0.2, sgn > 0 ? wh * 0.2 : -wh * 0.2), b = at(Ls + 6, sgn > 0 ? wh * 1.3 : -wh * 1.3);
+    q.moveTo(a.x, a.y); const c = at(Ls * 0.2, sgn > 0 ? wh * 1.5 : -wh * 1.5); q.lineTo(c.x, c.y); q.lineTo(b.x, b.y);
+    const d2 = at(Ls + 6, sgn > 0 ? -wh * 0.3 : wh * 0.3); q.lineTo(d2.x, d2.y); q.closePath();
+  }, 0);
+  // outline: full weight on the outside, a light seam where the sleeve meets the chest
+  g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = INK;
+  const { Ti, To, Ho, Hi, Ai, Tc } = G;
+  g.beginPath(); g.moveTo(Ti.x, Ti.y); g.quadraticCurveTo(Tc.x, Tc.y, To.x, To.y);
+  let c = at(Ls * 0.45, G.wr * 1.06); g.quadraticCurveTo(c.x, c.y, Ho.x, Ho.y);
+  c = at(Ls + 3, 0); g.quadraticCurveTo(c.x, c.y, Hi.x, Hi.y);
+  g.lineWidth = LW; g.stroke();
+  g.beginPath(); g.moveTo(Hi.x, Hi.y); c = at(Ls * 0.45, -wh); g.quadraticCurveTo(c.x, c.y, Ai.x, Ai.y);
+  g.lineWidth = LW * 0.55; g.stroke();
+  g.restore();
+}
+
+// One continuous tapered arm: thick at the sleeve, thin at the wrist, the elbow a smooth bend
+// with no bulge. The root (inside the sleeve) is shaded so it reads as tucked in.
+export function taperArm(g, S, E, W, w0, w1, fill, shadeCol, lw = LW, rootShade = 0) {
+  const a = Math.hypot(E.x - S.x, E.y - S.y) || 1e-3, b = Math.hypot(W.x - E.x, W.y - E.y) || 1e-3;
+  const r = Math.min(a, b) * 0.42;
+  const P0 = { x: E.x + (S.x - E.x) * r / a, y: E.y + (S.y - E.y) * r / a }, P2 = { x: E.x + (W.x - E.x) * r / b, y: E.y + (W.y - E.y) * r / b };
+  const pts = [];
+  const N = 22;
+  for (let i = 0; i <= N; i++) { const k = i / N; pts.push({ x: lerp(S.x, P0.x, k), y: lerp(S.y, P0.y, k) }); }
+  for (let i = 1; i <= N; i++) { const k = i / N, m = 1 - k; pts.push({ x: m * m * P0.x + 2 * m * k * E.x + k * k * P2.x, y: m * m * P0.y + 2 * m * k * E.y + k * k * P2.y }); }
+  for (let i = 1; i <= N; i++) { const k = i / N; pts.push({ x: lerp(P2.x, W.x, k), y: lerp(P2.y, W.y, k) }); }
+  let tot = 0; const sAt = [0]; for (let i = 1; i < pts.length; i++) { tot += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); sAt.push(tot); }
+  const left = [], right = [];
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[Math.min(pts.length - 1, i + 1)], o = pts[Math.max(0, i - 1)];
+    let nx = -(p.y - o.y), ny = p.x - o.x; const L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
+    const k = sAt[i] / tot, w = lerp(w0, w1, k * k * 0.35 + k * 0.65) / 2;
+    left.push({ x: pts[i].x + nx * w, y: pts[i].y + ny * w }); right.push({ x: pts[i].x - nx * w, y: pts[i].y - ny * w });
+  }
+  const outline = (q) => {
+    q.moveTo(left[0].x, left[0].y); for (const p of left) q.lineTo(p.x, p.y);
+    const e = pts[pts.length - 1], lw2 = w1 / 2, ang = Math.atan2(e.y - pts[pts.length - 2].y, e.x - pts[pts.length - 2].x);
+    q.arc(e.x, e.y, lw2, ang - Math.PI / 2, ang + Math.PI / 2);
+    for (let i = right.length - 1; i >= 0; i--) q.lineTo(right[i].x, right[i].y);
+    q.closePath();
+  };
+  // cel shadow: the half of the arm away from the light (top-left), as a band along one side
+  cel(g, outline, fill, shadeCol, (q) => {
+    const side = [];
+    for (let i = 0; i < pts.length; i++) {
+      const L2 = left[i], R2 = right[i], dl = L2.x * 0.6 + L2.y * 0.8, dr = R2.x * 0.6 + R2.y * 0.8;
+      const far = dl > dr ? L2 : R2;
+      side.push({ x: lerp(pts[i].x, far.x, 0.25), y: lerp(pts[i].y, far.y, 0.25), fx: far.x * 2 - pts[i].x, fy: far.y * 2 - pts[i].y });
+    }
+    q.moveTo(side[0].x, side[0].y); for (const p of side) q.lineTo(p.x, p.y);
+    for (let i = side.length - 1; i >= 0; i--) q.lineTo(side[i].fx, side[i].fy);
+    q.closePath();
+  }, lw);
+  if (rootShade > 0) { // the part just out of the sleeve sits in its shadow
+    g.save(); g.beginPath(); outline(g); g.clip();
+    let k = 0; while (k < pts.length - 1 && sAt[k] < rootShade) k++;
+    const e = pts[k], gr = g.createLinearGradient(S.x, S.y, e.x, e.y);
+    gr.addColorStop(0, 'rgba(70,30,20,0.55)'); gr.addColorStop(0.72, 'rgba(70,30,20,0.38)'); gr.addColorStop(1, 'rgba(70,30,20,0)');
+    g.fillStyle = gr; g.fillRect(-5000, -5000, 10000, 10000);
+    g.restore();
+  }
+}
+
 function drawArm(g, R, P, J, side, t, drawProp) {
   const A = P.arms[side], S = J.arms[side];
-  limb(g, [S.s, S.elbow, S.hand], R.armW, R.skin, R.skinShade);
-  // sleeve over the upper arm
+  // start the arm inside the sleeve: no round cap at the shoulder, ever
   const d = v.sub(S.elbow, S.s), L = v.len(d) || 1;
-  const sl = R.dress ? 0.42 : 0.55;
-  const end = { x: S.s.x + (d.x / L) * R.upper * sl, y: S.s.y + (d.y / L) * R.upper * sl };
-  limb(g, [{ x: S.s.x - (d.x / L) * 6, y: S.s.y - (d.y / L) * 6 }, end], R.armW + (R.dress ? 16 : 12), R.top, R.topShade);
+  const s0 = { x: S.s.x + (d.x / L) * R.armW * 0.25, y: S.s.y + (d.y / L) * R.armW * 0.25 };
+  const G = sleeveGeom(R, P, J, side);
+  taperArm(g, s0, S.elbow, S.hand, R.armW * 1.08, R.armW * 0.8, R.skin, R.skinShade, LW, G.Ls * 1.12 + 8);
   if (A.hold && drawProp) drawProp(g, A.hold, S.hand, S.ang, side, t, A);
   drawHand(g, R, S.hand, S.ang, A.grip, side);
   if (A.hold && A.hold.over && drawProp) drawProp(g, A.hold, S.hand, S.ang, side, t, A, true);
+}
+
+// Arm, then its sleeve over the arm root, then the forearm + hand again on top (clipped to a
+// capsule around the forearm), so a forearm folded back across the chest is never swallowed
+// by its own sleeve. The redraw paints identical pixels, so it leaves no seam.
+export function forearmClip(g, E, W, rad, from = 0.3) {
+  const a = { x: lerp(E.x, W.x, from), y: lerp(E.y, W.y, from) };
+  const ang = Math.atan2(W.y - a.y, W.x - a.x);
+  g.beginPath();
+  g.arc(W.x, W.y, rad * 1.9, ang - Math.PI / 2, ang + Math.PI / 2);
+  g.lineTo(a.x + Math.cos(ang - Math.PI / 2) * rad, a.y + Math.sin(ang - Math.PI / 2) * rad);
+  g.lineTo(a.x + Math.cos(ang + Math.PI / 2) * rad, a.y + Math.sin(ang + Math.PI / 2) * rad);
+  g.closePath(); g.clip();
+}
+export function armAndSleeve(g, J, side, rad, drawArmFn, drawSleeveFn) {
+  drawArmFn(); drawSleeveFn();
+  const S = J.arms[side];
+  g.save(); forearmClip(g, S.elbow, S.hand, rad); drawArmFn(); g.restore();
 }
 
 // pass: 'body' (everything behind the counter line) or 'front' (arms flagged front).
@@ -504,10 +650,11 @@ export function drawCharacter(g, R, P, J, { pass = 'body', t = 0, drawProp = nul
     for (const s of ['L', 'R']) if (P.arms[s].behind) drawArm(g, R, P, J, s, t, drawProp);
     drawNeck(g, R, P, J);
     drawTorso(g, R, P, J);
+    for (const s of ['L', 'R']) drawSleeve(g, R, P, J, s);
     drawHead(g, R, P, J);
-    for (const s of ['L', 'R']) if (!P.arms[s].front && !P.arms[s].behind) drawArm(g, R, P, J, s, t, drawProp);
+    for (const s of ['L', 'R']) if (!P.arms[s].front && !P.arms[s].behind) armAndSleeve(g, J, s, R.armW * 0.9, () => drawArm(g, R, P, J, s, t, drawProp), () => drawSleeve(g, R, P, J, s, { avoidHead: true }));
   } else {
-    for (const s of ['L', 'R']) if (P.arms[s].front) drawArm(g, R, P, J, s, t, drawProp);
+    for (const s of ['L', 'R']) if (P.arms[s].front) armAndSleeve(g, J, s, R.armW * 0.9, () => drawArm(g, R, P, J, s, t, drawProp), () => drawSleeve(g, R, P, J, s, { avoidHead: true }));
   }
 }
 

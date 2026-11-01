@@ -32,45 +32,73 @@
   },
   "torso": {
    "file": "parts/torso.png",
-   "w": 245,
-   "h": 341,
+   "w": 325,
+   "h": 421,
    "neckTop": {
-    "x": 121.5,
-    "y": 11
+    "x": 161.5,
+    "y": 51
    },
    "neckW": 44,
-   "shirtTop": 51,
-   "hem": 329,
+   "shirtTop": 91,
+   "hem": 369,
    "hip": {
-    "x": 122,
-    "y": 309.54
+    "x": 162,
+    "y": 349.54
    },
    "shoulderL": {
-    "x": 76.25,
-    "y": 79
+    "x": 113.6304,
+    "y": 125
    },
    "shoulderR": {
-    "x": 167.75,
-    "y": 79
+    "x": 210.3696,
+    "y": 125
    },
-   "width": 223
-  },
-  "upperArm": {
-   "file": "parts/upperArm.png",
-   "w": 108,
-   "h": 265,
-   "top": {
-    "x": 57.5,
-    "y": 42.97499965282402
+   "width": 223,
+   "base": {
+    "file": "parts/torso.base.png",
+    "w": 245,
+    "h": 341,
+    "neckTop": {
+     "x": 121.5,
+     "y": 11
+    },
+    "neckW": 44,
+    "shirtTop": 51,
+    "hem": 329,
+    "hip": {
+     "x": 122,
+     "y": 309.54
+    },
+    "shoulderL": {
+     "x": 76.25,
+     "y": 79
+    },
+    "shoulderR": {
+     "x": 167.75,
+     "y": 79
+    },
+    "width": 223
    },
-   "bottom": {
-    "x": 61,
-    "y": 232.07633977361496
-   },
-   "wTop": 86.99999918311534,
-   "wBot": 60.996847591494245,
-   "wMid": 92.0004102451785,
-   "tilt": 1.5
+   "sleeves": {
+    "file": "parts/sleeves.png",
+    "body": "parts/torso.body.png",
+    "L": {
+     "joint": {
+      "x": 113.6304,
+      "y": 125
+     }
+    },
+    "R": {
+     "joint": {
+      "x": 210.3696,
+      "y": 125
+     }
+    },
+    "lengthPx": 58.33122807017544,
+    "armRoot": 18.748489208633092,
+    "theta": 0.42,
+    "flapsTrimmed": false
+   }
   },
   "forearm": {
    "file": "parts/forearm.png",

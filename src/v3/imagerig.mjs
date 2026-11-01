@@ -16,7 +16,7 @@ import path from 'node:path';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { INK, LW, limb, ellipse, stroke, fill, cel } from '../v2/ink.mjs';
 import { clamp, lerp, v } from '../v2/util.mjs';
-import { RIGS } from '../v2/rig.mjs';
+import { RIGS, armAndSleeve } from '../v2/rig.mjs';
 
 const RES = 2.4; // strip pixels per rig unit (ECU shots run at ~3x zoom)
 
@@ -32,12 +32,14 @@ export async function loadImageRig(dir) {
   const T = rig.parts.torso;
   const kT = (base.torsoH + 10) / (T.hem - T.shirtTop);
   const shX = ((T.shoulderR.x - T.shoulderL.x) / 2) * kT;
+  const SL = T.sleeves; // sleeves painted into the torso (src/v3/sleeves.mjs) pick the joints
   const R = {
     ...base, image: IR,
     skin: rig.skin, skinShade: rig.skinShade,
-    shoulderX: clamp(shX, base.shoulderX * 0.75, base.shoulderX * 1.25),
-    shoulderInset: clamp((T.shoulderL.y - T.shirtTop) * kT, 8, 40),
+    shoulderX: SL ? shX : clamp(shX, base.shoulderX * 0.75, base.shoulderX * 1.25),
+    shoulderInset: SL ? (T.shoulderL.y - T.shirtTop) * kT : clamp((T.shoulderL.y - T.shirtTop) * kT, 8, 40),
   };
+  if (SL) { IR.sleeves = await loadImage(fs.readFileSync(path.join(dir, SL.file))); IR.body = await loadImage(fs.readFileSync(path.join(dir, SL.body))); IR.sleeveLen = SL.lengthPx * kT; }
   IR.kT = kT; IR.R = R;
   { // standing height of the puppet (ground to top of hair), so pose packs come in at the same size
     const { basePose, solve } = await import('../v2/rig.mjs');
@@ -47,7 +49,9 @@ export async function loadImageRig(dir) {
   // painted limbs come out at their own thickness: fit each segment's width to the v2
   // silhouette (sleeves a bit fuller than the bare forearm), lengths to the v2 bones
   const armW = R.armW + 2 * LW, legW = (R.legW + 2 * LW) * 1.15;
-  IR.arm = buildStrip(IR, 'upperArm', 'forearm', R.upper, R.fore, armW * 1.4, armW);
+  // one continuous skin strip from the sleeve to the wrist (no upper-arm sleeve part, no bulge)
+  IR.arm = SL ? buildArmStrip(IR, 'forearm', R.upper, R.fore, SL.armRoot, IR.sleeveLen)
+    : buildStrip(IR, 'upperArm', 'forearm', R.upper, R.fore, armW * 1.4, armW);
   IR.leg = buildStrip(IR, 'thigh', 'shin', R.thigh, R.shin, legW, legW);
   // back view (over-the-shoulder shots): the painted silhouettes, flat-filled and re-inked
   IR.backHead = silhouette(img['head.front'], rig.hair);
@@ -81,6 +85,29 @@ function buildStrip(IR, upperName, lowerName, a, b, wantU, wantL) {
   g.save(); g.beginPath(); g.rect(0, 0, W, yE + 1.5 * RES); g.clip();
   g.translate(cx, yS); g.scale(kU * RES * xU, kU * RES); g.drawImage(IR.img[upperName], -U.top.x, -U.top.y); g.restore();
   return { canvas: c, W, H, cx, yS, yE, yW, a, b, width: Math.max(U.wMid * kU * xU, L.wMid * kL * xL) };
+}
+
+// The whole arm from ONE bare-skin part, stretched over upper arm + forearm: its own taper runs
+// sleeve-to-wrist with nothing at the elbow. The top (inside the sleeve) is shaded so the root
+// reads as tucked in, and the strip starts a little below the joint so no cap exists at all.
+function buildArmStrip(IR, name, a, b, rootW, sleeveLen) {
+  const L = IR.rig.parts[name];
+  const len = L.bottom.y - L.top.y, k = (a + b) / len;
+  const xk = clamp(rootW / (L.wTop * k), 0.35, 2.2);
+  const half = Math.max(L.top.x, L.w - L.top.x, L.bottom.x, L.w - L.bottom.x) * k * xk;
+  const capBot = (L.h - L.bottom.y) * k;
+  const skip = rootW * 0.3; // start under the sleeve, below the joint
+  const W = Math.ceil(2 * half * RES) + 8, H = Math.ceil((a + b + capBot) * RES) + 8;
+  const c = createCanvas(W, H), g = c.getContext('2d');
+  const cx = W / 2, yS = 4, yE = yS + a * RES, yW = yE + b * RES;
+  g.save(); g.beginPath(); g.rect(0, yS + skip * RES, W, H); g.clip();
+  g.translate(cx, yS); g.scale(k * RES * xk, k * RES); g.drawImage(IR.img[name], -L.top.x, -L.top.y); g.restore();
+  // shadow of the sleeve on the arm root, fading out a little past the hem
+  g.save(); g.globalCompositeOperation = 'source-atop';
+  const gr = g.createLinearGradient(0, yS, 0, yS + (sleeveLen + rootW * 0.5) * RES);
+  gr.addColorStop(0, 'rgba(60,25,20,0.6)'); gr.addColorStop(0.7, 'rgba(60,25,20,0.42)'); gr.addColorStop(1, 'rgba(60,25,20,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H); g.restore();
+  return { canvas: c, W, H, cx, yS, yE, yW, a, b, width: rootW };
 }
 
 // Bend a strip along the chain S -> E -> W. Slices of the straight strip are laid along the
@@ -149,11 +176,32 @@ function sprite(g, IR, name, px, py, k, { rot = 0, mirror = false, sx = 1, sy = 
   g.drawImage(im, -px, -py); g.restore();
 }
 
-function drawTorso(g, IR, R, P, J) {
-  const T = IR.rig.parts.torso, k = IR.kT;
-  g.save(); g.translate(J.hip.x + P.turn * 8, J.hip.y); g.rotate(P.lean); g.scale(1 - 0.12 * Math.abs(P.turn), J.br);
+function torsoFrame(g, IR, R, P, J) {
+  const k = IR.kT;
+  g.translate(J.hip.x + P.turn * 8, J.hip.y); g.rotate(P.lean); g.scale(1 - 0.12 * Math.abs(P.turn), J.br);
   // image hem sits a touch below the hip, shirt top at -torsoH
-  g.translate(0, -R.torsoH); g.scale(k, k); g.drawImage(IR.img.torso, -T.hip.x, -T.shirtTop);
+  g.translate(0, -R.torsoH); g.scale(k, k);
+}
+function drawTorso(g, IR, R, P, J) {
+  const T = IR.rig.parts.torso;
+  g.save(); torsoFrame(g, IR, R, P, J); g.drawImage(IR.body || IR.img.torso, -T.hip.x, -T.shirtTop); g.restore();
+  if (IR.body) for (const s of ['L', 'R']) drawSleeveImg(g, IR, R, P, J, s, false);
+}
+// One side's sleeve again, over its own arm root (the arm is tucked inside it). It follows the
+// shrug of that shoulder; it never covers the head.
+function drawSleeveImg(g, IR, R, P, J, side, avoidHead = true) {
+  if (!IR.sleeves) return;
+  const T = IR.rig.parts.torso;
+  g.save();
+  if (avoidHead) {
+    g.beginPath(); g.rect(-4000, -4000, 8000, 8000);
+    g.ellipse(J.head.x, J.head.y, R.headRx * 1.05, R.headRy * 1.08, J.headAng, 0, Math.PI * 2);
+    g.clip('evenodd');
+  }
+  torsoFrame(g, IR, R, P, J);
+  const lift = -(side === 'L' ? P.shoulderL : P.shoulderR) / IR.kT;
+  g.beginPath(); if (side === 'L') g.rect(-T.hip.x, -T.shirtTop - 200, T.hip.x, T.h + 400); else g.rect(0, -T.shirtTop - 200, T.w, T.h + 400); g.clip();
+  g.drawImage(IR.sleeves, -T.hip.x, -T.shirtTop + lift);
   g.restore();
 }
 
@@ -343,8 +391,8 @@ export function drawImageCharacter(g, R, P, J, { pass = 'body', t = 0, drawProp 
     drawNeck(g, IR, R, P, J);
     drawTorso(g, IR, R, P, J);
     drawHeadImg(g, IR, R, P, J);
-    for (const s of ['L', 'R']) if (!P.arms[s].front && !P.arms[s].behind) drawArm(g, IR, R, P, J, s, t, drawProp);
+    for (const s of ['L', 'R']) if (!P.arms[s].front && !P.arms[s].behind) armAndSleeve(g, J, s, R.armW * 0.9, () => drawArm(g, IR, R, P, J, s, t, drawProp), () => drawSleeveImg(g, IR, R, P, J, s));
   } else {
-    for (const s of ['L', 'R']) if (P.arms[s].front) drawArm(g, IR, R, P, J, s, t, drawProp);
+    for (const s of ['L', 'R']) if (P.arms[s].front) armAndSleeve(g, J, s, R.armW * 0.9, () => drawArm(g, IR, R, P, J, s, t, drawProp), () => drawSleeveImg(g, IR, R, P, J, s));
   }
 }

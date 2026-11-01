@@ -60,6 +60,9 @@ const lastAt = (list, t, def) => { let r = def; for (const e of list) { if (e.t 
 const tip2hand = (tip, ang, len) => ({ x: tip.x - Math.cos(ang) * len, y: tip.y - Math.sin(ang) * len });
 const mouthOf = (R) => (J) => ({ x: J.head.x + Math.sin(J.headAng) * -R.mouthY, y: J.head.y + Math.cos(J.headAng) * R.mouthY });
 const counterRest = (c, side) => c.toLocal({ x: c.loc.x + (side === 'L' ? -96 : 96) * c.s, y: SET.counterTop + 4 });
+// Hands resting at the counter tuck just below its front edge (the counter is drawn over the
+// body pass), so idle hands never read as lumps sitting on the worktop.
+const counterTuck = (c, side) => c.toLocal({ x: c.loc.x + (side === 'L' ? -92 : 92) * c.s, y: SET.counterTop + 16 * c.s });
 
 export const CLIPS = {
   stir: {
@@ -191,7 +194,8 @@ export const CLIPS = {
       return {
         body: { headTilt: -0.16 + 0.05 * Math.sin(ph), headDY: -6 - b * 5, lean: -0.04, bob: -b * 9, shoulderL: b * 9, shoulderR: b * 9, sy: 1 + 0.025 * Math.sin(ph * 2) },
         R: { target: (J) => ({ x: J.hip.x + 34, y: J.hip.y - 40 }), grip: 'open', handRot: 1.2 },
-        L: { target: (J) => { const r = counterRest(c, 'L'); return { x: r.x + 10, y: r.y - 40 * Math.abs(Math.sin(ph / 2)) }; }, grip: 'flat', front: true },
+        // laughing: the fist thumps the worktop (knuckles down), a clear shape instead of a flat lump
+        L: { target: (J) => { const r = counterRest(c, 'L'); return { x: r.x + 18, y: r.y - 14 - 36 * Math.abs(Math.sin(ph / 2)) }; }, grip: 'fist', handRot: -0.5, front: true },
         face: { eyes: Math.sin(ph / 2) > 0.6 ? 'squeeze' : 'happy', mouth: 'laugh', open: 1 + 0.25 * Math.sin(ph * 2), brow: 0.6, blush: 1 },
         look: { at: 'cam' },
       };
@@ -425,8 +429,8 @@ export function evalActor(A, t, W) {
       const sw = Math.sin(TAU * L.phase + (side === 'L' ? 0 : Math.PI)) * 34;
       arm.target = (J) => ({ x: J.sh[side].x + sg * 18 + sw, y: J.hip.y + 4 });
     } else if (atCounter) {
-      const r = counterRest({ loc: L, s, toLocal }, side);
-      arm.target = r; arm.grip = 'flat'; arm.front = true; arm.handRot = sg * 0.25;
+      const r = counterTuck({ loc: L, s, toLocal }, side);
+      arm.target = r; arm.grip = 'open'; arm.front = false; arm.handRot = 0;
     } else {
       arm.target = (J) => ({ x: J.sh[side].x + sg * 16, y: J.hip.y + 6 });
     }

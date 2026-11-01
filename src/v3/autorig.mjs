@@ -154,11 +154,14 @@ export async function autoRig(dir, { log = console.error } = {}) {
 
   fs.writeFileSync(path.join(dir, 'rig.json'), JSON.stringify(rig, null, 1));
   log(`  rig.json: ${Object.keys(rig.parts).length} parts (${Object.keys(rig.parts).join(', ')})`);
-  return rig;
+  // sleeves go into the torso; the arm becomes one bare tapered strip tucked under them
+  fs.rmSync(path.join(partsDir, 'torso.base.png'), { force: true });
+  const { sleeveTorso } = await import('./sleeves.mjs');
+  return sleeveTorso(dir, { log });
 }
 
-// The model often paints short sleeves onto the torso even when told not to; the arm parts
-// bring their own sleeves, so cut the torso back to its body below the armpits and re-ink.
+// The model often paints sleeve flaps onto the torso; cut the torso back to its body below the
+// armpits and re-ink (src/v3/sleeves.mjs then paints proper sleeves into the torso).
 function trimSleeves(im, log) {
   const bb = alphaBox(im);
   let maxW = 0, maxY = bb.y0; for (let y = bb.y0; y <= bb.y1; y++) { const s = rowSpan(im, y); if (s && s.w > maxW) { maxW = s.w; maxY = y; } }

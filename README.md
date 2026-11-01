@@ -94,16 +94,26 @@ characters/kabir/
    own skin shows through and a patch edge can never show.
 3. **Auto-pivot.** Each limb is turned upright along its principal axis. Each joint sits one
    end-radius inside the end, so the rounded caps overlap the next part. Hands get a wrist,
-   the foot an ankle and sole line. The torso gets neck, shoulders and hip from its silhouette,
-   with painted sleeves trimmed back and re-inked (the arms bring their own). The head gets its
-   face ellipse from the blank skin.
+   the foot an ankle and sole line. The torso gets neck, shoulders and hip from its silhouette.
+   Any sleeve flaps the model painted are trimmed back, and **proper sleeves are painted into the
+   torso** (`src/v3/sleeves.mjs`): a sloped shoulder line, a short tube and a hem, in the
+   shirt's own colours. The head gets its face ellipse from the blank skin.
 4. **Map onto the v2 skeleton.** Bones keep their v2 lengths, so every v2 action, IK target,
    idle and lip-sync works unchanged. The shoulders move to where the painted torso has them.
 
-**How a painted elbow bends.** The upper arm and forearm are composed into one straight strip:
-the child goes first, then the parent, trimmed at the joint so its cap never draws a seam line.
-That strip is laid along the IK chain slice by slice, and the joint is a smooth curve. The
-elbow or knee bends like rubber-hose, the texture follows the bone, and nothing can come loose.
+**No puppet shoulders.** A sleeve never rides on the arm, so a swinging arm can't make a puffy
+shoulder cap pop off the body. The arm is **one bare, tapered skin strip** (sleeve to wrist, no
+bulge at the shoulder or elbow) that starts *under* the sleeve opening with its root shaded,
+and the sleeve is drawn again over it so the joint is never on screen. The forearm and hand are
+then redrawn on top, so a forearm folded across the chest is never swallowed by its own sleeve.
+The shoulder only swings inside the range the sleeve can hide (never above the shoulder line).
+The v2 vector rig works the same way: sleeves are part of the torso drawing, arms taper and
+tuck in. Idle hands at the counter tuck below its front edge instead of sitting there as lumps.
+
+**How a painted elbow bends.** The arm strip (and the thigh + shin strip, composed child-first
+with the parent trimmed at the joint so its cap never draws a seam line) is laid along the IK
+chain slice by slice, and the joint is a smooth curve. The elbow or knee bends like
+rubber-hose, the texture follows the bone, and nothing can come loose.
 Torso, head, hands and feet are rigid sprites on the solved joints. Eyes and mouths are pasted
 patches driven by the same blinks, lids and visemes as v2. Brows, nose, blush, sweat and neck stay
 thin vector ink.
@@ -117,7 +127,8 @@ cast:
 ### 3 · `rigpop-motion poses <character> <action>`: pose packs
 
 For the moves a puppet can't sell, the model paints 4–8 full-body keys of the same character.
-The startled jump is six. `poses` cuts them and evens out the model's size drift by measuring
+Full drawn poses read better than puppet arm swings, so the v3 reel leans on them: the
+"Mission..." hand-rub into a fist pump (5 poses), the belly laugh (7), and the startled jump (6). `poses` cuts them and evens out the model's size drift by measuring
 each face. It puts every pair of feet on one floor line and sizes the pack from the standing
 key, so it matches the puppet exactly. In the script it is one verb:
 
@@ -375,6 +386,7 @@ bin/rigpop-motion.js      CLI: render · still · strip · rig · poses · set (
 src/v3/imgops.mjs         chroma key, connected components, re-ink, principal axis
 src/v3/autorig.mjs        part sheets -> parts/*.png + rig.json (cut, pivots, face anchors)
 src/v3/imagerig.mjs       draws a solved v2 pose with painted parts (bent limb strips, face patches)
+src/v3/sleeves.mjs        paints sleeves into the torso, picks the shoulder joints under them
 src/v3/posepack.mjs       pose packs: cut, normalise, timing, the [K pose-pack ...] verb
 src/v3/set-guide.mjs      renders the v2 set as a layout guide for the image model
 src/v3/plates.mjs         painted plates + image props through the engine's scene hooks

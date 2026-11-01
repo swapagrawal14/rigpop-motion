@@ -40,6 +40,51 @@ export const ACTIONS = {
     ],
     sfx: [{ at: 0.2, name: 'whoosh', gain: 0.6 }, { at: 0.22, name: 'sting', gain: 0.35 }, { at: 0.62, name: 'step', gain: 0.55 }],
   },
+  // a full drawn belly laugh reads far better than a puppet bobbing its arms
+  laugh: {
+    poses: [
+      'standing upright with a big happy grin, arms relaxed',
+      'laughing, one fist raised',
+      'laughing hard, head back, hand on belly, fist raised',
+      'bent forward laughing, hand on belly',
+      'doubled over laughing, hands on knees',
+      'crouched laughing, hand on belly, a tear',
+      'laughing, wiping a tear under the sunglasses',
+    ],
+    keys: [
+      { pose: 0, t: 0.05, lift: 0 },
+      { pose: 1, t: 0.1, lift: 0 },
+      { pose: 2, t: 0.12, lift: 0, sy: 1.02 },
+      { pose: 1, t: 0.08, lift: 0, sy: 0.98 },
+      { pose: 2, t: 0.12, lift: 0, sy: 1.02 },
+      { pose: 3, t: 0.1, lift: 0 },
+      { pose: 4, t: 0.14, lift: 0, sy: 0.97 },
+      { pose: 3, t: 0.08, lift: 0 },
+      { pose: 4, t: 0.12, lift: 0, sy: 0.97 },
+      { pose: 5, t: 0.1, lift: 0 },
+      { pose: 6, t: 0.2, lift: 0 },
+    ],
+  },
+  // "Mission...": scheming hand-rub into a fist pump and a heroic point
+  mission: {
+    poses: [
+      'standing upright, eager excited face',
+      'leaning in, rubbing hands together, sneaky grin',
+      'crouched, rubbing hands together, scheming grin',
+      'excited fist pump, mouth open',
+      'heroic pose, index finger pointing up, hand on hip',
+    ],
+    keys: [
+      { pose: 0, t: 0.06, lift: 0 },
+      { pose: 1, t: 0.13, lift: 0 },
+      { pose: 2, t: 0.11, lift: 0, sy: 0.98 },
+      { pose: 1, t: 0.1, lift: 0 },
+      { pose: 2, t: 0.11, lift: 0, sy: 0.98 },
+      { pose: 3, t: 0.17, lift: 6, ease: 'out', sy: 1.03 },
+      { pose: 4, t: 0.32, lift: 0 },
+    ],
+    sfx: [{ at: 0.5, name: 'whoosh', gain: 0.4 }],
+  },
 };
 
 export function posePrompt(about, action) {

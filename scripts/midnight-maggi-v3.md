@@ -31,8 +31,10 @@ K (sneaky): Shhh... sab so gaye.
 
 # 3 · The stash
 [K open-fridge 1.1s]
-[shot ecu K]
+[shot medium K]
+[K pose-pack mission 1.3s &]
 K (excited): Mission...
+[shot ecu K]
 [K shades down 0.6s]
 K (smug): ...Maggi!
 [shot medium K]
@@ -57,8 +59,8 @@ K (excited): Do minute. Bas do minute!
 K (happy): Masala... full on!
 [shot ecu K]
 [K taste 2.4s]
-[camera push 1.18x 0.5s]
-[K laugh 1.8s &]
+[shot medium K]
+[K pose-pack laugh 1.9s &]
 K (laugh): Kasam se... jannat!
 
 # 5 · Caught
