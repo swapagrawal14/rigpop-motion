@@ -1,0 +1,57 @@
+{
+  "k1": {
+    "file": "/home/user/rigpop-motion/.cache/tts/c3db7100bc59192a.mp3",
+    "dur": 2.01,
+    "text": "Bhai... neend hi nahi aa rahi."
+  },
+  "k2": {
+    "file": "/home/user/rigpop-motion/.cache/tts/e04cfc4499a5df2f.mp3",
+    "dur": 2.92,
+    "text": "Aur pet... pet toh seedha Maggi maang raha hai."
+  },
+  "k3": {
+    "file": "/home/user/rigpop-motion/.cache/tts/b595b24c2461cec4.mp3",
+    "dur": 3.07,
+    "text": "Warden ki aankh... abhi bandi honi chahiye."
+  },
+  "k4": {
+    "file": "/home/user/rigpop-motion/.cache/tts/7e7bc6d9799acd42.mp3",
+    "dur": 3.73,
+    "text": "Arre wah! Kasam se... hotel se bhi accha hai."
+  },
+  "w1": {
+    "file": "/home/user/rigpop-motion/.cache/tts/2243dadad418b75a.mp3",
+    "dur": 3.52,
+    "text": "Kabir! Is waqt kitchen mein kya kar rahe ho?"
+  },
+  "k5": {
+    "file": "/home/user/rigpop-motion/.cache/tts/f0c5e611d5c3b23b.mp3",
+    "dur": 2.43,
+    "text": "Kuch nahi ma'am... bas, paani pi raha hoon."
+  },
+  "w2": {
+    "file": "/home/user/rigpop-motion/.cache/tts/b3619c4f4595d54e.mp3",
+    "dur": 0.62,
+    "text": "Maggi?"
+  },
+  "w3": {
+    "file": "/home/user/rigpop-motion/.cache/tts/0f7ca10d188b8703.mp3",
+    "dur": 1.36,
+    "text": "Ek plate meri bhi."
+  },
+  "k6": {
+    "file": "/home/user/rigpop-motion/.cache/tts/489f515d8c72a21d.mp3",
+    "dur": 0.56,
+    "text": "Ji ma'am!"
+  },
+  "w4": {
+    "file": "/home/user/rigpop-motion/.cache/tts/d26f8aeceeb8868e.mp3",
+    "dur": 1.42,
+    "text": "Kisi ko batana nahi."
+  },
+  "k7": {
+    "file": "/home/user/rigpop-motion/.cache/tts/d841de2550ec1d1d.mp3",
+    "dur": 1.94,
+    "text": "Waise ma'am... chai bhi bana doon?"
+  }
+}

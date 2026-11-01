@@ -11,6 +11,9 @@ const TASKS = {
   cutout: 'cutout-walk.mjs',    // cut-out puppet walk (one drawing, pivoted pieces)
   assets: 'chai-assets.mjs',    // voice lines + music bed + SFX for the short
   short: 'chai-short.mjs',      // the full 30 s short
+  maggi: 'maggi-short.mjs',     // the 60 s hostel comedy short
+  mprep: 'prep-maggi.mjs',      // cut the maggi cast + derive mouth patches
+  massets: 'maggi-assets.mjs',  // voice lines + score + foley for the 60 s short
 };
 const HELP = `rigpop-motion
 
@@ -19,6 +22,9 @@ const HELP = `rigpop-motion
   rigpop-motion walk      # render the flip-book walk demo
   rigpop-motion cutout    # render the cut-out puppet demo
   rigpop-motion short     # render the 30s short -> out/chai-short.mp4
+  rigpop-motion mprep     # cut the "2 Baje Ki Maggi" cast, derive mouth patches
+  rigpop-motion massets   # synthesize dialogue, score and foley for that short
+  rigpop-motion maggi     # render the 60s short -> out/maggi-short.mp4
 `;
 
 const cmd = process.argv[2];

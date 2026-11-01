@@ -31,3 +31,24 @@ export async function speak(text, { voice = 'hi-IN-MadhurNeural', pitchHz = 0, r
   tts.close?.();
   return out;
 }
+
+// Trim leading/trailing silence and normalise a voice take, so cues can be placed
+// on the exact beat they belong to.
+export function tighten(pcm, { keepPad = 0.02, peakTo = 0.92 } = {}) {
+  let peak = 0;
+  for (let i = 0; i < pcm.length; i++) { const a = Math.abs(pcm[i]); if (a > peak) peak = a; }
+  const thr = Math.max(0.004, peak * 0.02);
+  let a = 0, b = pcm.length - 1;
+  while (a < pcm.length && Math.abs(pcm[a]) < thr) a++;
+  while (b > a && Math.abs(pcm[b]) < thr) b--;
+  const pad = Math.floor(keepPad * SR);
+  const from = Math.max(0, a - pad), to = Math.min(pcm.length, b + pad);
+  const out = pcm.slice(from, to);
+  let p2 = 0;
+  for (let i = 0; i < out.length; i++) { const v = Math.abs(out[i]); if (v > p2) p2 = v; }
+  if (p2 > 0) { const k = peakTo / p2; for (let i = 0; i < out.length; i++) out[i] *= k; }
+  // 4 ms edge fades so nothing clicks
+  const f = Math.min(Math.floor(0.004 * SR), Math.floor(out.length / 2));
+  for (let i = 0; i < f; i++) { out[i] *= i / f; out[out.length - 1 - i] *= i / f; }
+  return out;
+}

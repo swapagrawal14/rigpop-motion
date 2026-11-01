@@ -113,6 +113,19 @@ Every stage is one file, no framework:
 And the whole soundtrack — 100 BPM ukulele-ish bed, four slurps, two gulps, one guilty meow —
 is generated from code in `src/chai-assets.mjs`. No samples, no licences.
 
+### …and the 60-second one
+
+**`out/maggi-short.mp4`** — *“2 Baje Ki Maggi”*, a hostel comedy in seven shots: a title, a
+craving, a tiptoe down the corridor, a kitchen, a knock, a warden who smells the evidence, and a
+3 AM payoff. Two characters, three plates, one 60 s score that changes act, eleven voice lines
+and a lip-sync track per actor.
+
+```bash
+npm run maggi:prep    # cut the cast, derive mouth patches
+npm run maggi:assets  # voice lines, score, foley
+npm run maggi         # → out/maggi-short.mp4
+```
+
 ---
 
 ## 🧠 The five rules (learned the hard way)

@@ -271,3 +271,65 @@ Do problems the user caught, dono theek:
 2. **"Chai apne aap kam ho rahi thi"** — ab level **sirf 4 visible laps par** girti hai (`lapEvery = 0.62s`, har lap par `1/4` level), aur har lap ka **apna `lap lap` / `slurrrp` caption + slurp SFX** hai. Audio bhi usi beat par hai: 4 slurps + 2 gulps, `lapStart = shotC + 1.40s`. Bench par **paw print** bhi reh jaata hai.
 
 Also in v2: bench ab proper legs ke saath banti hai (cat aur glass dono usi plank par baithte hain, hawa mein nahi), aur glass ka base + tea level + steam sab coherent hai.
+
+---
+
+## 11. "2 Baje Ki Maggi" — a 60 s short, and the six bugs it cost
+
+The first short proved the engine could hold a beat. The second one had to hold **four acts**
+and a joke. Everything below is a rule the render fought for.
+
+### 11.1 A camera is a scope, not a state
+
+`camera(g, {...})` that calls `g.save()` and never restores leaks the transform into every later
+frame: the canvas stack grows, shots drift, and a render "works" right up until it doesn't.
+The helper is now `withCam(g, opts, fn)` — save, transform, draw the world, restore. Characters
+go **inside** the scope, so a push-in zooms the actor and the background together. Zooming only
+the plate and leaving the bust at screen scale is what makes an animation feel like a slideshow.
+
+### 11.2 `canvas.encode()` is async; `canvas.toBuffer()` is not
+
+In a still-export loop the async encoder can hand back the *next* frame's pixels, so you spend
+an hour debugging a film where every frame is one scene behind. `toBuffer('image/png')` is
+synchronous and correct.
+
+### 11.3 Key the background by flood fill, never by colour alone
+
+A white keying pass deletes eye-whites, teeth and bowl rims — they are white too. Flood fill
+inward from the border over near-white pixels, then erode 1 px. Anything the ink encloses
+survives.
+
+### 11.4 Mouth patches are derived, not hand-placed
+
+Ask the image model for the same character with a different mouth, then **diff** the variant
+against the base after an alignment search. The changed region is the patch — no eyeballing
+coordinates, and the box stays correct when the artwork is regenerated. The warden's
+`patch_{A,E,O,blink,smile}.png` are produced that way by `src/prep-maggi.mjs`.
+
+### 11.5 Steam is soft puffs, not line segments
+
+Chains of tapered strokes read as dashed strings hanging in the air. Overlapping radial-gradient
+puffs that rise, wobble and fade read as vapour. Same for the burner: a free-standing flame
+sprite looks like a sticker on the oven panel — draw a heat glow plus a few blue licks hugging
+the pot's base instead.
+
+### 11.6 Duck the score, don't just lower it
+
+A constant bed level under eleven lines is exhausting. An envelope follower on the voice bus
+(`duck = 1 - 0.42 * clamp(env/0.06)`) with fast attack and slow release keeps the music present
+between phrases and out of the way during them.
+
+### 11.7 Shot sheet
+
+| Time | Shot | What is actually happening |
+|---|---|---|
+| 0.0–5.0 | cold open | title on the room plate, then he surfaces out of the dark, clock overlay |
+| 5.0–14.0 | the craving | cut-out bust, thought bubble with a drawn packet, growl gag |
+| 14.0–24.0 | corridor walk | 6-pose flip-book, scrolling plate, footsteps locked to stride, **freeze** on a creak |
+| 24.0–34.0 | kitchen | burner glow, steam puffs, falling masala, panning camera |
+| 34.0–43.0 | the knock | dark grade, door light creeping in, three knocks, the hidden bowl |
+| 43.0–52.0 | the warden | she slides in, sniff, dramatic push-in on her face, then a smile patch |
+| 52.0–60.0 | payoff | two-shot with two bowls, slurps, end card |
+
+Timing is cue-first: every line is placed on the beat, and the *visual* is written to match it —
+never the other way round.

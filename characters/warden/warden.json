@@ -1,0 +1,44 @@
+{
+  "sprite": "warden_cut.png",
+  "size": [
+    671,
+    746
+  ],
+  "patches": {
+    "A": {
+      "file": "patch_A.png",
+      "x": 218,
+      "y": 306,
+      "w": 240,
+      "h": 166
+    },
+    "E": {
+      "file": "patch_E.png",
+      "x": 218,
+      "y": 306,
+      "w": 240,
+      "h": 166
+    },
+    "O": {
+      "file": "patch_O.png",
+      "x": 218,
+      "y": 306,
+      "w": 240,
+      "h": 166
+    },
+    "blink": {
+      "file": "patch_blink.png",
+      "x": 239,
+      "y": 247,
+      "w": 198,
+      "h": 46
+    },
+    "smile": {
+      "file": "patch_smile.png",
+      "x": 218,
+      "y": 196,
+      "w": 240,
+      "h": 240
+    }
+  }
+}
