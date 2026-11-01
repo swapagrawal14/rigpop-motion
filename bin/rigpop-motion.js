@@ -17,6 +17,14 @@ const TASKS = {
 };
 const HELP = `rigpop-motion
 
+  v2 — vector rigs driven by a stage-direction script:
+  rigpop-motion render scripts/midnight-maggi.md -o out/midnight-maggi.mp4
+  rigpop-motion still  scripts/midnight-maggi.md -t 4.5,20 -o out/stills
+  rigpop-motion still  scripts/midnight-maggi.md --sheet 2 -o out/sheet.jpg
+  rigpop-motion gif    out/midnight-maggi.mp4 -s 17 -d 6 -o docs/clip.gif
+
+  v1 — motion comic from generated artwork:
+
   rigpop-motion assets    # synthesize dialogue, music bed and SFX
   rigpop-motion poses     # cut/normalise generated poses -> characters/<id>/poses
   rigpop-motion walk      # render the flip-book walk demo
@@ -27,11 +35,16 @@ const HELP = `rigpop-motion
   rigpop-motion maggi     # render the 60s short -> out/maggi-short.mp4
 `;
 
+const V2 = new Set(['render', 'still', 'gif']); // v2 engine: vector rigs + stage-direction scripts
 const cmd = process.argv[2];
 if (!cmd || cmd === '-h' || cmd === '--help' || cmd === 'help') {
   console.log(HELP);
   process.exit(0);
 }
+if (V2.has(cmd)) {
+  const p = spawn(process.execPath, [path.join(SRC, 'v2', 'cli.mjs'), ...process.argv.slice(2)], { stdio: 'inherit' });
+  p.on('close', (c) => process.exit(c ?? 0));
+} else {
 const file = TASKS[cmd];
 if (!file) {
   console.error(`unknown task "${cmd}"\n\n${HELP}`);
@@ -39,3 +52,4 @@ if (!file) {
 }
 const p = spawn(process.execPath, [path.join(SRC, file)], { stdio: 'inherit' });
 p.on('close', (c) => process.exit(c ?? 0));
+}

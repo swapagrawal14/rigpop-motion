@@ -1,12 +1,15 @@
 {
   "name": "rigpop-motion",
-  "version": "0.1.0",
-  "description": "Full cartoon animation from generated artwork: pose flip-book locomotion, cut-out rigs, camera moves, lip-sync and cue-locked sound design.",
+  "version": "0.2.0",
+  "description": "Cartoon animation in code: layered vector character rigs with IK, an always-alive motion system, and readable stage-direction scripts rendered to vertical reels with voices, captions and cue-locked sound.",
   "type": "module",
   "bin": {
     "rigpop-motion": "bin/rigpop-motion.js"
   },
   "scripts": {
+    "render": "node src/v2/cli.mjs render",
+    "still": "node src/v2/cli.mjs still",
+    "midnight": "node src/v2/cli.mjs render scripts/midnight-maggi.md -o out/midnight-maggi.mp4 --crf 25",
     "poses": "node src/extract-poses.mjs",
     "walk": "node src/flipbook-walk.mjs",
     "cutout": "node src/cutout-walk.mjs",
@@ -24,5 +27,14 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "files": [
+    "bin",
+    "src",
+    "scripts",
+    "assets/fonts",
+    "assets/maggi/*.wav",
+    "assets/maggi/bed.m4a",
+    "assets/chai/*.wav"
+  ]
 }
