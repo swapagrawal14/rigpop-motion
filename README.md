@@ -81,7 +81,7 @@ npm run cutout       # the cut-out puppet alternative
 Or use the CLI:
 
 ```bash
-npx rigpop-motion short
+node bin/rigpop-motion.js short   # or: npm run maggi for the 60 s Maggi short
 ```
 
 ---
@@ -167,7 +167,10 @@ src/flipbook-walk.mjs    pose flip-book walk
 src/cutout-walk.mjs      cut-out puppet walk
 src/chai-short.mjs       30 s short: shots, camera, lip-sync, subtitles
 src/chai-assets.mjs      dialogue, music bed and SFX, generated from scratch
-characters/              pose sets (kabir-side, street-cat) + talk patches
+src/maggi-short.mjs      60 s "2 Baje Ki Maggi": cooking pose pack, warden entrance, scoped camera
+src/maggi-assets.mjs     Maggi dialogue, music bed and SFX
+src/prep-maggi.mjs       cuts and normalises the Maggi cast (kabir-cook, warden)
+characters/              pose sets (kabir-side, kabir-cook, street-cat, warden) + talk patches
 assets/                  background plates, music bed, SFX
 docs/                    hero gifs, diagrams, SPEC
 ```
@@ -196,6 +199,7 @@ engine cuts, normalises and times it for you.
 
 - [**rigpop-agents**](https://github.com/swapagrawal14/rigpop-agents) — scripts in, talking videos out
 - [**rigpop-talk**](https://github.com/swapagrawal14/rigpop-talk) — the browser app
+- [**rigpop-ink**](https://github.com/swapagrawal14/rigpop-ink) — footage that redraws itself as ink
 - **rigpop-motion** — full cartoon animation *(you are here)*
 
 <sub>MIT © swapagrawal14 · brand assets regenerate with `node docs/brand/build-brand.mjs`</sub>
