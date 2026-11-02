@@ -41,6 +41,40 @@
 - Same character everywhere: reuse the exact style-bible text and model-sheet reference in every pose prompt, and regenerate any pose whose face or outfit drifts.
 - QA before delivering: check a contact sheet and consecutive-frame strips for pops, jitter, detached parts or style drift. Fix them, and don't ship abrupt moves.
 
+## New idea = new cast, new poses (reuse policy)
+
+A new video idea is a new production, not a re-shoot of the last one. Build the performance assets
+for it; reuse only the machinery.
+
+**Build fresh, every idea:**
+
+- the **cast** — `characters/<new-name>/` with its own drawn pose packs. Do not stage a new reel by
+  borrowing another reel's character, and never point a new character's `rig.json` at someone
+  else's pose PNGs to save a generation.
+- the **pose packs** for every beat, from a new pose sheet with a style bible: `listen` / `think` /
+  `point` / `explain` / `talk` shaped around what *these* characters actually do in *this* script.
+  Do not recycle an existing pack name for a beat it was not drawn for.
+- the **script** (`scripts/<idea>.md`) and a **writeup** (`docs/<IDEA>.md`) that records the beat
+  table, the framing numbers and what went wrong on the way.
+
+**Reuse freely — this is infrastructure, not performance:**
+
+| reusable | why |
+|---|---|
+| `src/` engine, `src/v3/cli.mjs`, `tools/*` | the pipeline itself |
+| sets in `tools/scenes/` | a new room can be copied and re-dressed; the layout maths is expensive |
+| `characters/<x>/parts/mouth.{A,E,M,O}.png` | legible mouth *shapes* are a rig component — chappal v4 got working lips by copying bunty's into pihu/shukla |
+| voices, music beds, sfx, `npm` scripts | cue-locked sound does not need to be re-authored |
+
+**Do not extend the old IK gesture clips.** `tools/clips/viva.mjs` and `tools/clips/chai.mjs` are the
+pre-pose-pack path (solved puppet arms driving a gesture). They are kept so old scripts still render;
+they are not a template for new work, and a new gesture is a drawn pose pack, never a new clip in
+those files. Same for `src/maggi-short.mjs` and the v2 reels — history, not starting points.
+
+If a reel is deliberately a **continuation** of an existing series (same characters, next episode),
+then reusing that cast's packs is correct — but say so in the script header (`continuity: <series>`),
+and any *new* action still needs a newly drawn pose.
+
 ## Why
 Hand-drawn studios animate pose-to-pose: strong keys first, timing and in-betweens after. Drawn poses always look intentional and appealing; procedural limb swings look robotic. The best results so far came from full drawn poses (Rigpop's doodle characters, AI-generated pose sheets) with smooth eased transitions between them.
 

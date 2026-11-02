@@ -37,6 +37,8 @@ Write a short like a screenplay; get a 720×1280 reel with voices, captions and 
 <img src="docs/logo.png" width="88" align="right" alt="rigpop-motion logo">
 
 > **Agents and contributors:** read [AGENTS.md](AGENTS.md) first. The rule is pose first, motion second: generate drawn key poses, then animate smooth eased transitions between them. No puppet limb swings, no visible joints.
+>
+> **A new idea is a new production:** fresh cast, fresh pose packs, fresh script. Only the machinery is reused — the engine, the sets, the mouth shapes, the voices. The old IK gesture clips (`tools/clips/`) are history, not a starting point.
 
 ## 🧩 v3: hybrid image rig, auto-rig and pose packs
 
