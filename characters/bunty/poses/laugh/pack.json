@@ -21,27 +21,46 @@
    "t": 0.4,
    "lift": 0,
    "face": {
+    "blink": {
+     "file": "key0.blink.png",
+     "x": 110,
+     "y": 61,
+     "w": 60,
+     "h": 29
+    },
+    "eyes": {
+     "file": "key0.eyes.png",
+     "pupil": {
+      "file": "key0.pupils.png",
+      "x": 5,
+      "y": 8,
+      "w": 49,
+      "h": 17
+     }
+    },
     "mouth": {
-     "x": 135,
-     "y": 101,
-     "w": 33,
-     "h": 26,
+     "x": 114,
+     "y": 76,
+     "w": 37,
+     "h": 50,
      "files": {
       "rest": "key0.m.rest.png",
       "M": "key0.m.M.png",
       "A": "key0.m.A.png",
       "O": "key0.m.O.png",
       "E": "key0.m.E.png"
-     }
+     },
+     "erased": 158,
+     "inkLeft": 0
     }
    },
    "faceBox": {
-    "x": 114,
-    "y": 67,
-    "w": 74,
-    "h": 71
+    "x": 106,
+    "y": 46,
+    "w": 68,
+    "h": 74
    },
-   "neckY": 147
+   "neckY": 120
   }
  ]
 }

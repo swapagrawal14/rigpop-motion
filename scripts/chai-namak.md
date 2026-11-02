@@ -18,8 +18,8 @@ cast:
 [shot wide]
 [stove on]
 [sfx boil 0.45]
-[S pose-pack idle 60s &] [K pose-pack idle 60s &]
-[wait 0.4s]
+[S pose-pack talk 60s &] [K pose-pack idle 60s &]
+[wait 0.25s]
 S (smug): Chai ka asli raaz pyaar nahi hota... masala hota hai.
 [shot medium S]
 [camera push 1.15x 2.2s]
@@ -27,8 +27,8 @@ S (smug): Chai ka asli raaz pyaar nahi hota... masala hota hai.
 
 # 2 · The neighbour has questions
 [shot medium K]
-[K pose-pack idle 60s &]
-[wait 0.2s]
+[K pose-pack talk 60s &]
+[wait 0.15s]
 K (sneaky): Haan haan. Aur aapke masale ka kya certificate hai?
 [wait 0.4s]
 
@@ -42,9 +42,10 @@ S (excited): Ek chutki... NAMAK!
 
 # 4 · Disaster
 [shot medium K]
-[K pose-pack despair 60s &]
-[wait 0.2s]
+[K pose-pack talk 60s &]
+[wait 0.15s]
 K (shock): Chai mein namak?! Bhagwan! Yeh toh soup hai!
+[K pose-pack despair 60s &]
 [wait 0.5s]
 
 # 5 · The taste test
@@ -71,7 +72,7 @@ K (happy): Aur namkeen chai pe koi panic nahi karta!
 
 # 8 · Payoff
 [shot medium S]
-[S pose-pack laugh 60s &]
-[wait 0.2s]
+[S pose-pack talk 60s &]
+[wait 0.15s]
 S (happy): Toh aaj se, is tapri ka naam... Namkeen Chai!
 [wait 0.6s]

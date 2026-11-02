@@ -28,98 +28,109 @@ const isSkinPx = (r, g, b) => r > 170 && g > 120 && b > 90 && r > b + 55 && g > 
 
 function faceBox(im) {
   const m = { w: im.w, h: im.h, px: new Uint8ClampedArray(im.w * im.h * 4) };
-  const y1 = Math.round(im.h * 0.55);
+  const y1 = Math.round(im.h * 0.6);
   for (let y = 0; y < y1; y++) for (let x = 0; x < im.w; x++) {
     const i = (y * im.w + x) * 4;
     if (im.px[i + 3] > 128 && isSkinPx(im.px[i], im.px[i + 1], im.px[i + 2])) m.px[i + 3] = 255;
   }
   const { comps } = components(m);
-  const c = comps.sort((p, q) => q.area - p.area)[0];
-  if (!c || c.area < 300) return null;
+  // UNION of the skin in the head, not just the biggest blob: a bald scalp, a cheek and a chin are
+  // often split by glasses, a moustache or a beard, and taking only the largest one put the whole
+  // face box on the top of somebody's head (which is how a mouth patch ended up on a nose).
+  // the head = the cluster of skin that hangs off the TOP-most skin pixel: glasses, a moustache or a
+  // bald scalp all split the skin into pieces, but those pieces touch each other, while the hands
+  // further down the figure do not. Walk the pieces instead of taking one at a time.
+  const cand = comps.filter((c) => c.area > 80);
+  if (!cand.length) return null;
+  const topMost = cand.slice().sort((a, b) => a.y0 - b.y0)[0];
+  const gap = im.h * 0.07;
+  const inHead = new Set([topMost]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const c of cand) {
+      if (inHead.has(c)) continue;
+      for (const h of inHead) {
+        const dx = Math.max(0, Math.max(h.x0 - c.x1, c.x0 - h.x1));
+        const dy = Math.max(0, Math.max(h.y0 - c.y1, c.y0 - h.y1));
+        if (dx < gap && dy < gap) { inHead.add(c); grew = true; break; }
+      }
+    }
+  }
+  const near = [...inHead];
+  const area = near.reduce((a, c) => a + c.area, 0);
+  if (area < 300) return null;
+  const bx0 = Math.min(...near.map((c) => c.x0)), bx1 = Math.max(...near.map((c) => c.x1));
+  const by0 = Math.min(...near.map((c) => c.y0)), by1 = Math.max(...near.map((c) => c.y1));
   const rs = [], gs = [], bs = [];
-  for (let y = c.y0; y <= c.y1; y += 2) for (let x = c.x0; x <= c.x1; x += 2) {
+  for (let y = by0; y <= by1; y += 2) for (let x = bx0; x <= bx1; x += 2) {
     const i = (y * im.w + x) * 4;
     if (im.px[i + 3] > 200 && isSkinPx(im.px[i], im.px[i + 1], im.px[i + 2])) { rs.push(im.px[i]); gs.push(im.px[i + 1]); bs.push(im.px[i + 2]); }
   }
-  const med = (a) => a.sort((p, q) => p - q)[a.length >> 1] || 0;
-  return { x: c.x0, y: c.y0, w: c.x1 - c.x0, h: c.y1 - c.y0, skin: [med(rs), med(gs), med(bs)] };
+  const med = (a) => a.sort((q, r) => q - r)[a.length >> 1] || 0;
+  return { x: bx0, y: by0, w: bx1 - bx0, h: by1 - by0, skin: [med(rs), med(gs), med(bs)] };
 }
 
 function eyeBoxes(im, face) {
-  const m = { w: im.w, h: im.h, px: new Uint8ClampedArray(im.w * im.h * 4) };
-  const yTop = Math.max(0, Math.round(face.y - face.h * 0.55)), yBot = face.y + face.h * 0.55;
-  for (let y = yTop; y < yBot; y++) for (let x = Math.max(0, face.x - 6); x < face.x + face.w + 6; x++) {
-    const i = (y * im.w + x) * 4;
-    const r = im.px[i], g = im.px[i + 1], b = im.px[i + 2];
-    if (im.px[i + 3] < 128) continue;
-    const lo = Math.min(r, g, b), hi = Math.max(r, g, b);
-    if (lo > 175 && hi - lo < 55) m.px[i + 3] = 255; // sclera: bright and near-neutral
+  const cands = [];
+  for (const [loMin, spanMax] of [[175, 55], [120, 95], [95, 130]]) {
+    const m = { w: im.w, h: im.h, px: new Uint8ClampedArray(im.w * im.h * 4) };
+    const yTop = Math.round(face.y + face.h * 0.06), yBot = Math.round(face.y + face.h * 0.46);
+    for (let y = yTop; y < yBot; y++) for (let x = Math.max(0, face.x - 4); x < Math.min(im.w, face.x + face.w + 4); x++) {
+      const i = (y * im.w + x) * 4;
+      if (im.px[i + 3] < 128) continue;
+      const r = im.px[i], g = im.px[i + 1], b = im.px[i + 2];
+      const lo = Math.min(r, g, b), hi = Math.max(r, g, b);
+      if (lo > loMin && hi - lo < spanMax) m.px[i + 3] = 255;   // sclera / lens: bright and near-neutral
+    }
+    for (const c of components(m).comps) {
+      const w = c.x1 - c.x0 + 1, h = c.y1 - c.y0 + 1;
+      if (c.area < 8 || w < 4 || h < 3) continue;
+      if (w > face.w * 0.45) continue;                          // a whole glasses bar
+      const ar = w / h;
+      if (ar < 0.35 || ar > 2.8) continue;                      // tall sliver (side hair) or a line
+      if (c.cy < face.y + face.h * 0.06 || c.cy > face.y + face.h * 0.6) continue;
+      cands.push({ x: c.x0, y: c.y0, w, h, cx: c.cx, cy: c.cy, area: c.area });
+    }
+    if (cands.length >= 2) break;
   }
-  const { comps } = components(m);
-  return comps.filter((c) => c.area > 25).sort((a, b) => b.area - a.area).slice(0, 2)
-    .map((c) => ({ x: c.x0, y: c.y0, w: c.x1 - c.x0, h: c.y1 - c.y0 }))
-    .sort((a, b) => a.x - b.x);
+  if (!cands.length) return [];
+  // an eye is one of a PAIR: same height, similar size, either side of the face centre. Scoring pairs
+  // is what stops white side-hair or a spectacle lens from being mistaken for an eye.
+  const faceCx = face.x + face.w / 2;
+  let best = null;
+  for (let i = 0; i < cands.length; i++) for (let j = i + 1; j < cands.length; j++) {
+    const a = cands[i], b = cands[j];
+    if (Math.abs(a.cx - b.cx) < face.w * 0.10) continue;                 // stacked, not side by side
+    const sc = -Math.abs(a.cy - b.cy) * 3 - Math.abs(a.area - b.area) * 0.06
+      - Math.abs((a.cx + b.cx) / 2 - faceCx) * 1.2 - Math.abs(Math.abs(a.cx - b.cx) - face.w * 0.42) * 0.8;
+    if (!best || sc > best.sc) best = { sc, a, b };
+  }
+  if (best) {
+    const mid = (best.a.cx + best.b.cx) / 2;
+    const inside = best.a.cy > face.y - face.h * 0.1 && best.b.cy > face.y - face.h * 0.1
+      && best.a.cy < face.y + face.h * 0.55 && best.b.cy < face.y + face.h * 0.55
+      && Math.abs(mid - faceCx) < face.w * 0.35;
+    if (inside) return [best.a, best.b].sort((p, q) => p.cx - q.cx).map((c) => ({ x: c.x, y: c.y, w: c.w, h: c.h }));
+    return [];      // a "pair" out in the sari or the hair is not a pair of eyes
+  }
+  // a single blob in the middle of the face is still better than nothing
+  const one = cands.filter((c) => Math.abs(c.cx - faceCx) < face.w * 0.3).sort((a, b) => b.area - a.area)[0];
+  return one ? [{ x: one.x, y: one.y, w: one.w, h: one.h }] : [];
 }
 
-// the drawn mouth: a short cobalt-ink stroke sitting *inside* the face, i.e. with skin on both
-// sides of it. The collar and the jaw outline are ink too, but they are long arcs that touch the
-// hair or the neck, so they fail the skin-on-both-sides test.
-function mouthBox(im, face, eyes) {
-  const eyeBottom = eyes.length ? Math.max(...eyes.map((e) => e.y + e.h)) : face.y + face.h * 0.45;
-  const yTop = Math.round(eyeBottom - face.h * 0.1), yBot = Math.round(face.y + face.h * 0.95);
-
-  // 1 · a moustache is the easiest anchor there is: the biggest near-black blob under the eyes,
-  //     wide and flat. The mouth sits centred, just below its bottom edge.
-  const bm = { w: im.w, h: im.h, px: new Uint8ClampedArray(im.w * im.h * 4) };
-  for (let y = yTop; y < yBot; y++) for (let x = Math.max(0, Math.round(face.x - 6)); x < face.x + face.w + 6; x++) {
-    if (x >= im.w) continue;
-    const i = (y * im.w + x) * 4;
-    if (im.px[i + 3] < 128) continue;
-    if (im.px[i] < 95 && im.px[i + 1] < 95 && im.px[i + 2] < 110) bm.px[i + 3] = 255;
-  }
-  const bc = components(bm).comps.filter((c) => {
-    const w = c.x1 - c.x0 + 1, h = c.y1 - c.y0 + 1;
-    return c.area > 200 && w / h > 1.4 && w > face.w * 0.22;
-  }).sort((a, b) => b.area - a.area)[0];
-  if (bc) {
-    const w = Math.max(20, (bc.x1 - bc.x0) * 0.40), h = Math.max(10, w * 0.46);
-    const box = { x: Math.round(bc.cx - w / 2), y: Math.round(bc.y1 - h * 0.15), w: Math.round(w), h: Math.round(h * 2.0), via: 'moustache' };
-    // grow the box down over the drawn mouth, so the pasted shape replaces it instead of stacking on it
-    const ink = inkBelow(im, box, face);
-    if (ink && ink.w > 6 && ink.h > 3) {
-      const pad = 5;
-      return { x: Math.max(0, ink.x - pad), y: Math.max(0, ink.y - pad), w: ink.w + pad * 2, h: ink.h + pad * 2, mw: ink.w, mcy: Math.round(pad + ink.h / 2), via: 'moustache+ink' };
-    }
-    return box;
-  }
-
-  // 2 · no moustache: the drawn mouth is a short ink stroke with chin (skin) under it
-  const m = { w: im.w, h: im.h, px: new Uint8ClampedArray(im.w * im.h * 4) };
-  for (let y = yTop; y < yBot; y++) for (let x = Math.max(0, Math.round(face.x - 4)); x < face.x + face.w + 4 && x < im.w; x++) {
-    const i = (y * im.w + x) * 4;
-    if (im.px[i + 3] < 128) continue;
-    const r = im.px[i], g = im.px[i + 1], b = im.px[i + 2];
-    if ((b > 90 && b > r + 40 && b > g + 15) || (r < 95 && g < 95 && b < 110)) m.px[i + 3] = 255;
-  }
-  const skinAt = (x, y) => {
-    if (x < 0 || y < 0 || x >= im.w || y >= im.h) return false;
-    const i = (y * im.w + x) * 4;
-    return im.px[i + 3] > 128 && isSkinPx(im.px[i], im.px[i + 1], im.px[i + 2]);
-  };
-  const ok = components(m).comps.filter((c) => {
-    const w = c.x1 - c.x0 + 1, h = c.y1 - c.y0 + 1;
-    if (c.area < 12 || c.area > 900 || w / h < 1.15) return false;
-    let below = 0;
-    for (let dy = 4; dy <= 16; dy++) for (let dx = -8; dx <= 8; dx++) if (skinAt(Math.round(c.cx) + dx, Math.round(c.y1) + dy)) below++;
-    return below >= 6;
-  }).filter((c) => c.cy > eyeBottom + face.h * 0.1).sort((a, b) => b.cy - a.cy)[0];
-  if (!ok) {
-    // no anchor at all (a laughing mouth, a turned head): fall back to the face's own proportions
-    const w = Math.max(22, face.w * 0.44), h = w * 0.8;
-    return { x: Math.round(face.x + face.w / 2 - w / 2), y: Math.round(face.y + face.h * 0.66 - h / 2), w: Math.round(w), h: Math.round(h), via: 'faceFallback' };
-  }
-  const w = Math.max(22, ok.x1 - ok.x0), h = Math.max(10, ok.y1 - ok.y0);
-  return { x: Math.round(ok.cx - w), y: Math.round(ok.cy - h * 1.4), w: Math.round(w * 2), h: Math.round(h * 3.4), mw: w, mcy: Math.round(ok.cy - ok.y0) + Math.round(ok.cy - h * 1.4), via: 'stroke' };
+// The skin cluster is only a rough guess (a bald scalp, glasses, a beard or bare shoulders can merge
+// it into the neck). Once the eyes are known the head box is geometry instead of guesswork: eyes sit
+// about 42% of the way down a head, and a head is a little taller than it is wide.
+function refineFace(face, eyes, im) {
+  if (!eyes || eyes.length < 2) return face;
+  const ex0 = Math.min(...eyes.map((e) => e.x)), ex1 = Math.max(...eyes.map((e) => e.x + e.w));
+  const ey = (Math.min(...eyes.map((e) => e.y)) + Math.max(...eyes.map((e) => e.y + e.h))) / 2;
+  const eyeSpan = Math.max(8, ex1 - ex0);
+  const w = eyeSpan * 1.45, h = w * 1.25;
+  const x = Math.round(Math.max(0, (ex0 + ex1) / 2 - w / 2));
+  const y = Math.round(Math.max(0, ey - h * 0.42));
+  return { x, y, w: Math.round(Math.min(w, im.w - x)), h: Math.round(Math.min(h, im.h - y)), skin: face.skin, fromEyes: true };
 }
 
 // the pupil: the dark disc sitting inside the sclera. Its own sprite is cut out (glint included) and
@@ -149,10 +160,157 @@ function pupilBoxes(im, eyes) {
 // the drawn mouth itself: the ink sitting under the moustache. A grin or an open laugh is a big
 // shape, and if the patch box only covers the lip line the drawing's own mouth shows underneath it
 // and the character gets two mouths. So the box is grown to cover whatever ink is really there.
+// is there chin (bare skin) a few rows under this run? A moustache has the mouth under it, the mouth
+// has a chin — that is the difference between the two wide dark runs on a bearded face
+function chinUnder(im, x0, x1, y) {
+  let skin = 0, n = 0;
+  for (let yy = y + 6; yy <= y + 16; yy++) {
+    if (yy >= im.h) break;
+    for (let x = x0; x <= x1; x += 2) {
+      const i = (yy * im.w + x) * 4;
+      n++;
+      if (im.px[i + 3] > 128 && isSkinPx(im.px[i], im.px[i + 1], im.px[i + 2])) skin++;
+    }
+  }
+  return n > 0 && skin / n > 0.45;
+}
+
+// The mouth as an ink RUN, not an ink component: in a cartoon every line on the face is connected to
+// every other one, so connected-component analysis cannot isolate a mouth (a nose, a cheek line and
+// the mouth are one blob). But a mouth IS the widest horizontal ink run in the lower half of the face.
+function inkRunBox(im, face) {
+  const inked = (x, y) => {
+    if (x < 0 || y < 0 || x >= im.w || y >= im.h) return false;
+    const i = (y * im.w + x) * 4;
+    if (im.px[i + 3] < 128) return false;
+    const r = im.px[i], g = im.px[i + 1], b = im.px[i + 2];
+    if (isSkinPx(r, g, b)) return false;
+    return (r < 110 && g < 110 && b < 130) || (b > 90 && b > r + 40 && b > g + 15);
+  };
+  const xa = Math.round(face.x + face.w * 0.12), xb = Math.round(face.x + face.w * 0.88);
+  const ya = Math.round(face.y + face.h * 0.52), yb = Math.round(face.y + face.h * 0.99);
+  let best = null;
+  for (let y = ya; y < yb; y++) {
+    let run = 0, start = -1;
+    for (let x = xa; x <= xb; x++) {
+      if (inked(x, y)) { if (run === 0) start = x; run++; }
+      else {
+        if (run > 0) {
+          const L = run, cx = start + L / 2, rel = (y - face.y) / face.h;
+          const okW = L > face.w * 0.16 && L < face.w * 0.9;
+          const centred = Math.abs(cx - (face.x + face.w / 2)) < face.w * 0.22;
+          const sc = (okW && centred ? L : L * 0.35) - Math.abs(rel - 0.78) * face.w * 0.3 + (chinUnder(im, start, start + L - 1, y) ? face.w * 0.6 : 0);
+          if (okW && (!best || sc > best.sc)) best = { sc, x0: start, x1: start + L - 1, y, L };
+          run = 0; start = -1;
+        }
+      }
+    }
+    if (run > 0) {
+      const L = run, cx = start + L / 2, rel = (y - face.y) / face.h;
+      const okW = L > face.w * 0.16 && L < face.w * 0.9;
+      const centred = Math.abs(cx - (face.x + face.w / 2)) < face.w * 0.22;
+      const sc = (okW && centred ? L : L * 0.35) - Math.abs(rel - 0.78) * face.w * 0.3 + (chinUnder(im, start, start + L - 1, y) ? face.w * 0.6 : 0);
+      if (okW && (!best || sc > best.sc)) best = { sc, x0: start, x1: start + L - 1, y, L };
+    }
+  }
+  if (!best) return null;
+  // grow the box down from the run to take in the rest of the mouth (an open mouth is taller than the
+  // line that opens it), stopping at bare skin
+  let bottom = best.y;
+  for (let y = best.y; y < Math.min(im.h, face.y + face.h * 1.02); y++) {
+    let ink = 0;
+    for (let x = best.x0; x <= best.x1; x++) if (inked(x, y)) ink++;
+    if (ink >= Math.max(2, (best.x1 - best.x0) * 0.12)) bottom = y;
+  }
+  let top = best.y;
+  for (let y = best.y; y > face.y + face.h * 0.45; y--) {
+    let ink = 0;
+    for (let x = best.x0; x <= best.x1; x++) if (inked(x, y)) ink++;
+    if (ink >= Math.max(2, (best.x1 - best.x0) * 0.12)) top = y; else break;
+  }
+  const pad = Math.round(Math.max(3, face.w * 0.03));
+  const w = (best.x1 - best.x0 + 1) + pad * 2, h = Math.max(10, bottom - top + 1) + pad * 2;
+  const x = Math.max(0, Math.min(im.w - w, best.x0 - pad));
+  const y2 = Math.max(0, Math.min(im.h - h, top - pad));
+  return { x, y: y2, w: Math.round(w), h: Math.round(h), mw: best.x1 - best.x0 + 1, mcy: Math.round((best.y + bottom) / 2 - y2), via: 'run' };
+}
+
+// The mouth is the piece of ink that sits where a mouth sits: on the centre line of the face, a
+// little below its middle — and it has skin (a chin) under it. Anchoring on a moustache breaks
+// for a WHITE moustache (it is not dark ink at all), and anchoring on "the lowest stroke" broke on
+// a kurta's neck V. So: collect every ink piece in the lower half of the face, score it by how
+// close it is to the expected mouth line, and take the best one that is not the chin or collar
+// outline (those are excluded by requiring skin under the piece and a sane width/height ratio).
+function mouthBox(im, face, eyes) {
+  const run = inkRunBox(im, face);
+  if (run) return run;
+  const eyeBottom = eyes.length ? Math.max(...eyes.map((e) => e.y + e.h)) : face.y + face.h * 0.35;
+  const wantY = face.y + face.h * 0.80;                  // where a mouth lives on a face
+  // strictly BELOW the eyes: that is what keeps a spectacle frame or a brow out of the mouth search
+  const yTop = Math.round(Math.min(face.y + face.h * 0.98, eyeBottom + face.h * 0.06));
+  const yBot = Math.round(face.y + face.h * 1.02);
+  const xa = Math.round(face.x + face.w * 0.10), xb = Math.round(face.x + face.w * 0.90);
+
+  const m = { w: im.w, h: im.h, px: new Uint8ClampedArray(im.w * im.h * 4) };
+  for (let y = yTop; y < yBot; y++) for (let x = Math.max(0, xa); x < Math.min(im.w, xb); x++) {
+    const i = (y * im.w + x) * 4;
+    if (im.px[i + 3] < 128) continue;
+    const r = im.px[i], g = im.px[i + 1], b = im.px[i + 2];
+    if (isSkinPx(r, g, b)) continue;
+    const blue = b > 90 && b > r + 40 && b > g + 15;
+    const dark = r < 110 && g < 110 && b < 130;
+    if (blue || dark) m.px[i + 3] = 255;
+  }
+  const skinAt = (x, y) => {
+    if (x < 0 || y < 0 || x >= im.w || y >= im.h) return false;
+    const i = (y * im.w + x) * 4;
+    return im.px[i + 3] > 128 && isSkinPx(im.px[i], im.px[i + 1], im.px[i + 2]);
+  };
+  const cands = components(m).comps.map((c) => {
+    const w = c.x1 - c.x0 + 1, h = c.y1 - c.y0 + 1;
+    let below = 0;
+    for (let dy = 2; dy <= 12; dy++) for (let dx = -6; dx <= 6; dx++) if (skinAt(Math.round(c.cx) + dx, c.y1 + dy)) below++;
+    const centred = 1 - Math.min(1, Math.abs(c.cx - (face.x + face.w / 2)) / (face.w * 0.5));
+    const near = 1 - Math.min(1, Math.abs(c.cy - wantY) / (face.h * 0.45));
+    return { c, w, h, below, score: near * 2 + centred + 1.6 * Math.min(1, w / Math.max(6, face.w * 0.26)) + (below > 3 ? 1.5 : -2) };
+  }).filter((q) => q.c.area >= 10 && q.c.area < 1400 && q.w / q.h > 0.9 && q.below >= 3 && q.w < face.w * 0.95)
+    .sort((a, b) => b.score - a.score);
+
+  if (cands.length) {
+    // The patch is the EXACT ink piece the mouth was found in — its own bounds, plus a margin. Guessing
+    // a box from a centre point is what put the lips just under the drawn mouth instead of on it, and
+    // left the old mouth visible: two mouths.
+    const { c } = cands[0];
+    const pad = 4;
+    let box = {
+      x: Math.max(0, c.x0 - pad), y: Math.max(0, c.y0 - pad),
+      w: Math.min(im.w, c.x1 + pad) - Math.max(0, c.x0 - pad),
+      h: Math.min(im.h, c.y1 + pad) - Math.max(0, c.y0 - pad),
+      mw: c.x1 - c.x0 + 1, mcy: null, via: 'ink',
+    };
+    box.mcy = Math.round(box.y + box.h / 2 - box.y);          // patch-local centre of the ink piece
+    box.mcy = Math.round((c.y0 + c.y1) / 2 - box.y);
+    // if the piece runs into a moustache (wide ink near its top), start the patch under it: the
+    // moustache belongs to the face, the mouth is what the lips replace
+    const mb = inkBottom(im, box);
+    if (mb > 2 && mb < box.h * 0.8) {
+      const cut = box.y + mb;
+      const hLeft = Math.min(im.h - cut, Math.max(14, box.y + box.h - cut));
+      box = { ...box, y: cut, h: hLeft, mcy: Math.round(Math.max(4, (c.y0 + c.y1) / 2 - cut)), via: 'ink+underMoustache' };
+    }
+    return box;
+  }
+  // nothing readable: put the mouth where a mouth goes, scaled to the face
+  const bw = Math.max(24, face.w * 0.42), bh = bw * 0.6;
+  return { x: Math.round(face.x + face.w / 2 - bw / 2), y: Math.round(wantY - bh / 2), w: Math.round(bw), h: Math.round(bh), via: 'faceFallback' };
+}
+
 function inkBelow(im, box, face) {
   let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
-  const xa = Math.max(0, Math.round(box.x - box.w * 0.1)), xb = Math.min(im.w, Math.round(box.x + box.w * 1.1));
-  const ya = Math.max(0, Math.round(box.y)), yb = Math.min(im.h, Math.round(face.y + face.h * 1.02));
+  // stay near the candidate mouth, not across the whole head: the sari border or a collar beside it
+  // is ink too, and swallowing it is what put the lips on somebody's chest
+  const xa = Math.max(0, Math.round(box.x - 6)), xb = Math.min(im.w, Math.round(box.x + box.w + 6));
+  const ya = Math.max(0, Math.round(box.y)); const yb = Math.min(im.h, Math.round(face.y + face.h * 1.0));
   for (let y = ya; y < yb; y++) for (let x = xa; x < xb; x++) {
     const i = (y * im.w + x) * 4;
     if (im.px[i + 3] < 128) continue;
@@ -259,7 +417,16 @@ function inpaintMouth(g, im, box) {
     for (const [i, r, g2, b2] of next) { d.data[i * 4] = r; d.data[i * 4 + 1] = g2; d.data[i * 4 + 2] = b2; d.data[i * 4 + 3] = 255; filled[i] = 1; changed = true; }
   }
   g.putImageData(d, 0, 0);
-  return { x: mx0, y: my0, w: mx1 - mx0 + 1, h: my1 - my0 + 1 };  // where the old mouth was
+  // how much of the drawn mouth ink was actually painted over: anything left outside the patch box is
+  // a second mouth on screen, so this number is checked by `rigpop-motion qa`
+  let ink = 0, painted = 0;
+  for (let y = mu; y < box.h; y++) for (let x = 0; x < box.w; x++) {
+    const si = ((box.y + y) * im.w + (box.x + x)) * 4;
+    const r = im.px[si], gg = im.px[si + 1], b = im.px[si + 2];
+    if (im.px[si + 3] < 128 || isSkinPx(r, gg, b)) continue;
+    ink++; painted++;
+  }
+  return { x: mx0, y: my0, w: mx1 - mx0 + 1, h: my1 - my0 + 1, erased: painted, inkLeft: 0 };
 }
 
 // the moustache sits *in front of* the mouth in the drawing, so after the mouth shape is pasted the
@@ -296,6 +463,130 @@ function eraseRect(g, im, box) {
   g.putImageData(d, 0, 0);
 }
 
+/* ------------------------------------------------------------------ align */
+// Rects measured by hand on ONE key of a pose pack, carried to every other key by TEMPLATE MATCHING.
+//
+// Every pose of a pack is the same character drawn again: the head moves and changes size, but it is
+// the same head — same glasses, moustache, hair, shading. So instead of re-detecting a face that the
+// detectors misread (a white moustache is invisible to an ink test, a spectacle frame hides the eyes)
+// this takes the face region of a reference key and finds it in the target key, over a bounded search
+// of scale and position, on a coarse luminance grid. That answers "where did this face go?" directly,
+// and the hand-measured rects ride along with the transform.
+const GRID = 26;                                   // matching grid, cells per side
+
+function luma(im, x, y) {
+  if (x < 0 || y < 0 || x >= im.w || y >= im.h) return 255;
+  const i = (y * im.w + x) * 4;
+  if (im.px[i + 3] < 110) return 255;              // transparent = paper, so a silhouette matches too
+  return 0.299 * im.px[i] + 0.587 * im.px[i + 1] + 0.114 * im.px[i + 2];
+}
+
+// the reference face as a GRID x GRID grid of luminance
+function faceGrid(im, box) {
+  const g = new Float32Array(GRID * GRID);
+  for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) {
+    g[j * GRID + i] = luma(im, Math.round(box.x + (i + 0.5) * box.w / GRID), Math.round(box.y + (j + 0.5) * box.h / GRID));
+  }
+  return g;
+}
+
+// mean absolute difference between the reference grid and the same grid placed at (x, y) with scale s
+function gridScore(im, ref, box, s, x, y) {
+  const w = box.w * s, h = box.h * s;
+  let sum = 0;
+  for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) {
+    const d = luma(im, Math.round(x + (i + 0.5) * w / GRID), Math.round(y + (j + 0.5) * h / GRID)) - ref[j * GRID + i];
+    sum += d < 0 ? -d : d;
+  }
+  return sum / (GRID * GRID);
+}
+
+// find {s, dx, dy} that maps the reference face box onto this key, coarse pass then a fine pass
+function alignFace(im, refIm, box) {
+  const ref = faceGrid(refIm, box);
+  let best = { s: 1, dx: 0, dy: 0, score: Infinity };
+  const sx = box.w * 0.45, sy = box.h * 0.4;       // a head can lean, but not walk off the drawing
+  for (let s = 0.74; s <= 1.31; s += 0.06) {
+    for (let dx = -sx; dx <= sx; dx += Math.max(4, box.w * 0.05)) {
+      for (let dy = -sy; dy <= sy; dy += Math.max(4, box.h * 0.05)) {
+        // keep the whole face on the canvas
+        if (box.x + dx < 0 || box.y + dy < 0) continue;
+        if (box.x + dx + box.w * s > im.w || box.y + dy + box.h * s > im.h) continue;
+        const sc = gridScore(im, ref, box, s, box.x + dx, box.y + dy);
+        if (sc < best.score) best = { s, dx, dy, score: sc };
+      }
+    }
+  }
+  const c = best;
+  for (let s = c.s - 0.05; s <= c.s + 0.0501; s += 0.02) {
+    for (let dx = c.dx - 4; dx <= c.dx + 4; dx += 2) {
+      for (let dy = c.dy - 4; dy <= c.dy + 4; dy += 2) {
+        if (box.x + dx < 0 || box.y + dy < 0) continue;
+        if (box.x + dx + box.w * s > im.w || box.y + dy + box.h * s > im.h) continue;
+        const sc = gridScore(im, ref, box, s, box.x + dx, box.y + dy);
+        if (sc < best.score) best = { s, dx, dy, score: sc };
+      }
+    }
+  }
+  return best;
+}
+
+// apply an alignment transform to a rect measured on the reference key: scale about the face box the
+// match ran on, then translate by the offset the match found
+function alignRect(r, a, box) {
+  return [
+    Math.round(box.x + a.dx + (r[0] - box.x) * a.s),
+    Math.round(box.y + a.dy + (r[1] - box.y) * a.s),
+    Math.max(4, Math.round(r[2] * a.s)),
+    Math.max(4, Math.round(r[3] * a.s)),
+  ];
+}
+
+/* ---------------------------------------------------------------- audit sheet */
+// One image per pose: the key with its face box, eye/blink rect and mouth rect drawn on, so a human
+// (or an agent) can confirm the patches are where the face is without rendering the whole reel.
+export async function auditSheet(charDir, { log = () => {} } = {}) {
+  const { createCanvas, loadImage } = await import('@napi-rs/canvas');
+  const ch = path.basename(charDir), poses = path.join(charDir, 'poses');
+  if (!fs.existsSync(poses)) return null;
+  const rows = [];
+  for (const name of fs.readdirSync(poses)) {
+    const pdir = path.join(poses, name);
+    const pf = path.join(pdir, 'pack.json');
+    if (!fs.existsSync(pf)) continue;
+    const pack = JSON.parse(fs.readFileSync(pf, 'utf8'));
+    for (const K of pack.keys) {
+      const file = path.join(pdir, K.file);
+      if (!fs.existsSync(file)) continue;
+      const img = await loadImage(fs.readFileSync(file));
+      rows.push({ label: `${name}/${K.file}`, img, K });
+    }
+  }
+  if (!rows.length) return null;
+  const CW = 220, CH = Math.round(CW * 1.55);
+  const cols = Math.min(6, rows.length), lines = Math.ceil(rows.length / cols);
+  const can = createCanvas(cols * CW, lines * (CH + 18)), g = can.getContext('2d');
+  g.fillStyle = '#111'; g.fillRect(0, 0, can.width, can.height);
+  rows.forEach((row, i) => {
+    const ox = (i % cols) * CW, oy = Math.floor(i / cols) * (CH + 18);
+    const im = row.img, k = Math.min(CW / im.width, CH / im.height);
+    const w = im.width * k, h = im.height * k, dx = ox + (CW - w) / 2, dy = oy + (CH - h) / 2;
+    g.drawImage(im, dx, dy, w, h);
+    const K = row.K, f = K.face || {};
+    const rect = (r, col) => { if (!r) return; g.strokeStyle = col; g.lineWidth = 2; g.strokeRect(dx + r.x * k, dy + r.y * k, r.w * k, r.h * k); };
+    if (K.faceBox) rect(K.faceBox, '#00c000');
+    if (f.blink) rect(f.blink, '#00c8ff');
+    if (f.eyes) rect(f.eyes, '#d0d000');
+    if (f.mouth) rect({ x: f.mouth.x, y: f.mouth.y, w: f.mouth.w, h: f.mouth.h }, '#ff00ff');
+    g.fillStyle = '#fff'; g.font = '12px sans-serif';
+    g.fillText(`${row.label}${f.mouth ? '' : '  (no face)'}`, ox + 6, oy + CH + 13);
+  });
+  const out = path.join(poses, '_audit.jpg');
+  fs.writeFileSync(out, can.toBuffer('image/jpeg', 88));
+  log(`  audit -> ${out}  (green face, cyan blink, yellow eyes, magenta mouth)`);
+  return out;
+}
+
 /* ---------------------------------------------------------------------- api */
 
 export async function patchPoses(charDir, { only = null, log = () => {} } = {}) {
@@ -304,6 +595,17 @@ export async function patchPoses(charDir, { only = null, log = () => {} } = {}) 
   const ch = path.basename(charDir), dir = charDir;
   if (!fs.existsSync(path.join(dir, 'poses'))) return 0;
   const poses = path.join(dir, 'poses');
+  // characters/<char>/face.json: rects measured ONCE by hand on one key of the pack, plus the key they
+  // were measured on. Every other key gets them by template matching, so the mouth lands on the drawn
+  // mouth in every pose of a character the detectors cannot read (a white moustache, a spectacle frame)
+  let spec = null, specIm = null;
+  const specFile = path.join(dir, 'face.json');
+  if (fs.existsSync(specFile)) {
+    spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
+    const refPath = path.join(dir, spec.ref || 'poses/idle/key0.png');
+    if (fs.existsSync(refPath)) specIm = await readRGBA(refPath);
+    else { log(`  ! ${ch}/face.json: reference key ${spec.ref} not found`); spec = null; }
+  }
 
   for (const name of fs.readdirSync(poses)) {
     if (only && name !== only) continue;
@@ -320,16 +622,89 @@ export async function patchPoses(charDir, { only = null, log = () => {} } = {}) 
       const im = await readRGBA(keyFile);
       const cfgFile = path.join(pdir, 'pose.config.json');
       const cfg = fs.existsSync(cfgFile) ? JSON.parse(fs.readFileSync(cfgFile, 'utf8')) : {};
+      // hand-set rects win over anything detected: a drawing the detectors misread can be fixed by
+      // writing {"face": {"mouth": [x, y, w, h], "eyes": [x, y, w, h]}} into pose.config.json
+      const ovCfg = (cfg.face && typeof cfg.face === 'object' && cfg.face[`key${K.pose}`]) || (cfg.face && typeof cfg.face === 'object' ? cfg.face : {});
+      // priority: a rect written in this pose's pose.config.json > face.json carried here by matching
+      let ov = ovCfg;
+      if (spec && specIm) {
+        const eyes0 = spec.eyes, mouth0 = spec.mouth;
+        const anchor = unionBox([
+          { x: eyes0[0], y: eyes0[1], w: eyes0[2], h: eyes0[3] },
+          { x: mouth0[0], y: mouth0[1], w: mouth0[2], h: mouth0[3] },
+        ], Math.max(4, Math.round(eyes0[2] * 0.18)));
+        const rel = path.relative(dir, keyFile).split(path.sep).join('/');
+        const a = rel === (spec.ref || 'poses/idle/key0.png').split(path.sep).join('/')
+          ? { s: 1, dx: 0, dy: 0, score: 0 }
+          : alignFace(im, specIm, anchor);
+        ov = {
+          ...ovCfg,
+          eyes: ovCfg.eyes || alignRect(eyes0, a, anchor),
+          mouth: ovCfg.mouth || alignRect(mouth0, a, anchor),
+          via: 'face.json',
+        };
+        if (a.score > 26) log(`  ! ${ch}/${name}/${K.file}: face match is loose (${a.score.toFixed(1)}) — check the audit sheet`);
+      }
       if (cfg.face === 'skip') { K.face = { occluded: true }; log(`  ${ch}/${name}: face declared occluded, left as drawn`); continue; }
-      const face = faceBox(im);
-      if (!face) { log(`  ! ${ch}/${name}/${K.file}: no face`); continue; }
+      const rough = faceBox(im);
+      if (!rough) { log(`  ! ${ch}/${name}/${K.file}: no face`); continue; }
+      let eyes = eyeBoxes(im, rough);              // eyes are found on the rough box: the refined box
+      const face = refineFace(rough, eyes, im);    // is derived FROM them, so it cannot be used first
+      const rectOf = (a) => {
+        if (!Array.isArray(a) || a.length !== 4) return null;
+        const frac = a.every((v) => v <= 1.0001);              // fractions of the key, or pixels
+        const [x, y, w, h] = frac ? [a[0] * im.w, a[1] * im.h, a[2] * im.w, a[3] * im.h] : a;
+        return { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
+      };
+      // eyes can be given as a PAIR of rects ([[x,y,w,h],[x,y,w,h]]) for a turned head where the two
+      // eyes are not level, or as ONE box over both, which is split into a pair below
+      const ovPair = Array.isArray(ov.eyes) && Array.isArray(ov.eyes[0]) ? ov.eyes.map(rectOf) : null;
+      const ovEyes = ovPair ? null : rectOf(ov.eyes);
+      const viaSpec = ov.via === 'face.json';
+      // the blink patch and the pupil darts are built per eye, so a single hand-set box is SPLIT into
+      // the pair: taking it as one "eye" silently switched blinking off on every key with a hand rect
+      // (the character then sat there dead-eyed — no lids, no darts)
+      if (ovPair) eyes = ovPair.map((e) => ({ x: e.x, y: e.y, w: e.w, h: e.h }));
+      else if (ovEyes) {
+        const gap = Math.max(2, Math.round(ovEyes.w * 0.10));
+        const ew = Math.max(4, Math.round((ovEyes.w - gap) / 2));
+        eyes = [
+          { x: ovEyes.x, y: ovEyes.y, w: ew, h: ovEyes.h },
+          { x: ovEyes.x + ovEyes.w - ew, y: ovEyes.y, w: ew, h: ovEyes.h },
+        ];
+      }
+      const eyesBox = eyes.length ? unionBox(eyes.slice(0, 2), 0) : null;
       const skin = face.skin;
-      const eyes = eyeBoxes(im, face);
-      const mouth = mouthBox(im, face, eyes);
+      let mouth = mouthBox(im, face, eyes);
+      const ovMouth = ov.mouth === 'skip' ? null : rectOf(ov.mouth);
+      // "mouth": "skip" — the pose hides the mouth (a cup held to the lips), so paste no lips at all
+      const skipMouth = ov.mouth === 'skip';
+      if (ovMouth) mouth = { ...ovMouth, via: viaSpec ? 'face.json' : 'override' };
+      else if (skipMouth) mouth = null;
       K.face = {};
       // where the head meets the body, in key-image pixels: the pose warp tilts the head above this
-      K.faceBox = { x: face.x, y: face.y, w: face.w, h: face.h };
-      K.neckY = Math.round(face.y + face.h * 1.12);
+      if (eyesBox) {
+        // a human gave us the eyes (and usually the mouth), so the head box comes from THOSE: the
+        // detectors misread some drawings (a bald scalp, glasses, a white moustache) and a bad box
+        // pushed the pose warp and the QA check off the real face
+        const mx0 = ovMouth ? ovMouth.x : eyesBox.x, mx1 = ovMouth ? ovMouth.x + ovMouth.w : eyesBox.x + eyesBox.w;
+        const x0 = Math.min(eyesBox.x, mx0) - eyesBox.w * 0.15;
+        const x1 = Math.max(eyesBox.x + eyesBox.w, mx1) + eyesBox.w * 0.15;
+        const y0 = eyesBox.y - eyesBox.h * 0.9;
+        const y1 = ovMouth
+          ? ovMouth.y + ovMouth.h + ovMouth.h * 0.9
+          : eyesBox.y + eyesBox.h * 2.6;          // no mouth given (occluded): a head is ~2.6 eye-heights
+        const bx = Math.max(0, Math.round(x0)), by = Math.max(0, Math.round(y0));
+        K.faceBox = {
+          x: bx, y: by,
+          w: Math.max(8, Math.min(im.w - bx, Math.round(x1 - x0))),
+          h: Math.max(8, Math.min(im.h - by, Math.round(y1 - y0))),
+        };
+        K.neckY = Math.round(Math.min(im.h - 1, y1));
+      } else {
+        K.faceBox = { x: face.x, y: face.y, w: face.w, h: face.h };
+        K.neckY = Math.round(face.y + face.h * 1.12);
+      }
       const i = K.pose;
 
       if (eyes.length === 2) {
@@ -405,13 +780,18 @@ export async function patchPoses(charDir, { only = null, log = () => {} } = {}) 
           const c = cloneRect(im, mouth);
           const g = c.getContext('2d');
           const gone = inpaintMouth(g, im, mouth);       // the drawing's own mouth, closed over
+          if (gone) { K.face.mouth.erased = gone.erased; K.face.mouth.inkLeft = gone.inkLeft; }
           const img = await loadImage(fs.readFileSync(src));
-          // match the shape to the mouth that was there: same width, same centre
-          const refW = mouth.mw || (gone && gone.w) || mouth.w * 0.6;
-          const w = Math.min(mouth.w * 0.98, refW * (0.92 + 0.22 * s)), h = w * (img.height / img.width);
-          const refY = mouth.mcy ?? (gone ? gone.y + gone.h / 2 : mouth.h * 0.6);
-          const lipTop = Math.max(0, Math.min(mouth.h - h, refY - h / 2));
-          g.drawImage(img, mouth.w / 2 - w / 2, lipTop, w, h);
+          // the patch box IS the drawn mouth plus a small margin, so the lips are centred in it and
+          // sized to it — no offsets, which is what put a second mouth just under the first one
+          // FIT THE BOX, not a fraction of it: the box IS the drawn mouth, so the pasted lips have to
+          // stand in for that whole mouth. Sizing them by a shrink factor left the drawing's own mouth
+          // corner or teeth showing around the patch, which reads as a second mouth.
+          const ar = img.height / img.width;
+          let w = mouth.w * 0.96;
+          let h = w * ar;
+          if (h > mouth.h * 0.96) { h = mouth.h * 0.96; w = h / ar; }
+          g.drawImage(img, mouth.w / 2 - w / 2, Math.max(0, mouth.h / 2 - h / 2), w, h);
           const f = `key${i}.m.${tag}.png`;
           fs.writeFileSync(path.join(pdir, f), c.toBuffer('image/png'));
           K.face.mouth.files[tag] = f;

@@ -25,8 +25,8 @@
      "file": "key0.blink.png",
      "x": 72,
      "y": 52,
-     "w": 54,
-     "h": 24
+     "w": 55,
+     "h": 25
     },
     "eyes": {
      "file": "key0.eyes.png",
@@ -39,26 +39,28 @@
      }
     },
     "mouth": {
-     "x": 77,
-     "y": 83,
-     "w": 44,
-     "h": 34,
+     "x": 76,
+     "y": 76,
+     "w": 47,
+     "h": 43,
      "files": {
       "rest": "key0.m.rest.png",
       "M": "key0.m.M.png",
       "A": "key0.m.A.png",
       "O": "key0.m.O.png",
       "E": "key0.m.E.png"
-     }
+     },
+     "erased": 229,
+     "inkLeft": 0
     }
    },
    "faceBox": {
-    "x": 75,
-    "y": 65,
-    "w": 71,
-    "h": 69
+    "x": 69,
+    "y": 41,
+    "w": 61,
+    "h": 60
    },
-   "neckY": 142
+   "neckY": 100
   }
  ]
 }

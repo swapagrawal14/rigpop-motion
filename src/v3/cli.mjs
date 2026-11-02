@@ -96,9 +96,10 @@ if (cmd === 'set') {
   } else await cutPack(dir, action, { log });
 } else if (cmd === 'faces') {
   const name = pos[0]; if (!name) { log('usage: rigpop-motion faces <character> [pose]'); process.exit(2); }
-  const { patchPoses } = await import('./facepatch.mjs');
+  const { patchPoses, auditSheet } = await import('./facepatch.mjs');
   const n = await patchPoses(RP('characters', name), { only: pos[1] || null, log });
   log(`  ${n} key(s) with a live face`);
+  if (argv.includes('--audit')) await auditSheet(RP('characters', name), { log });
 } else if (cmd === 'qa') {
   const { checkCharacter, checkScript, report } = await import('./qa.mjs');
   const targets = pos.length ? pos : fs.readdirSync(RP('characters')).filter((n) => fs.existsSync(RP('characters', n, 'rig.json'))).map((n) => n);

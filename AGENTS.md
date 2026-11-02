@@ -28,3 +28,36 @@
 
 ## Why
 Hand-drawn studios animate pose-to-pose: strong keys first, timing and in-betweens after. Drawn poses always look intentional and appealing; procedural limb swings look robotic. The best results so far came from full drawn poses (Rigpop's doodle characters, AI-generated pose sheets) with smooth eased transitions between them.
+
+## Face patches on pose packs (v3)
+
+`rigpop-motion faces <character>` writes, per key, a blink patch, eye darts and five lip-sync mouth
+patches, and stores their rects in that pose's `pack.json`. The mouth rect has to be the DRAWN mouth,
+exactly: a patch that sits beside it leaves the drawing's own mouth on screen, i.e. two mouths.
+
+Automatic detection is good on a clean face and unreliable on a real one — a white moustache swallows
+the mouth, a spectacle frame swallows the eyes, white teeth read as sclera. When that happens the rects
+are set by hand, per key, in `characters/<char>/poses/<pose>/pose.config.json`:
+
+```json
+{ "mode": "full", "out": "full",
+  "face": { "key0": { "eyes": [126, 66, 51, 14], "mouth": [135, 112, 26, 15] } } }
+```
+
+- `eyes` is one box over both eyes (it gets split into a pair) or a PAIR of boxes
+  `[[x,y,w,h],[x,y,w,h]]` for a turned head where the two eyes are not level.
+- `mouth` is the box that IS the drawn mouth: it gets erased and the lips are pasted over it. A pose
+  that hides the mouth (a cup at the lips) uses `"mouth": "skip"`.
+- Numbers are in KEY-image pixels. Measure them, never guess, and then LOOK:
+
+```bash
+node tools/facegrid.mjs sharmaji talk key1.png 8      # zoom + pixel grid to read numbers off
+node src/v3/cli.mjs faces sharmaji                     # regenerate the patches
+node tools/face-rects.mjs sharmaji talk out/x.png      # the rects drawn on every key
+node tools/face-paste-preview.mjs sharmaji talk A out/y.png  # the mouth patch pasted back on
+node src/v3/cli.mjs qa scripts/chai-namak.md           # the automated backstop
+```
+
+The preview is the one that settles it: if the drawing's own mouth is still visible next to the patch,
+the box is in the wrong place or too small, whatever the numbers say.
+

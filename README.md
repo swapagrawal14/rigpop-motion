@@ -423,10 +423,14 @@ src/v3/autorig.mjs        part sheets -> parts/*.png + rig.json (cut, pivots, fa
 src/v3/imagerig.mjs       draws a solved v2 pose with painted parts (bent limb strips, face patches)
 src/v3/sleeves.mjs        paints sleeves into the torso, picks the shoulder joints under them
 src/v3/posepack.mjs       pose packs: cut, normalise, timing, the [K pose-pack ...] verb
+src/v3/facepatch.mjs      keeps the face alive on a pose pack: blink, eye darts, lip-sync patches
 src/v3/set-guide.mjs      renders the v2 set as a layout guide for the image model
 src/v3/plates.mjs         painted plates + image props through the engine's scene hooks
 src/v3/cli.mjs            set / rig / poses / render / still / strip
 characters/<name>/        sheets, parts, rig.json, poses/<action>/ (v3 image rigs)
+tools/facegrid.mjs        zoomed key + pixel grid: read a face rect off a drawing by eye
+tools/face-rects.mjs      draws the rects pack.json ended up with, on every key, so they can be checked
+tools/face-paste-preview.mjs  pastes a mouth patch back onto its key: the "is there a second mouth?" check
 assets/v3/                painted night-kitchen plates (src/ = raw generations) and props
 scripts/midnight-maggi-v3.md  the v3 reel
 src/v2/util.mjs           easing (back, spring), noise, 2-bone IK

@@ -1,4 +1,15 @@
 {
  "mode": "full",
- "out": "full"
+ "out": "full",
+ "face": {
+  "key0": {
+   "eyes": [
+    85,
+    65,
+    70,
+    26
+   ],
+   "mouth": "skip"
+  }
+ }
 }

@@ -18,23 +18,35 @@
    "face": {
     "blink": {
      "file": "key0.blink.png",
-     "x": 154,
-     "y": 298,
-     "w": 112,
-     "h": 15
+     "x": 102,
+     "y": 151,
+     "w": 214,
+     "h": 38
+    },
+    "eyes": {
+     "file": "key0.eyes.png",
+     "pupil": {
+      "file": "key0.pupils.png",
+      "x": 5,
+      "y": 5,
+      "w": 205,
+      "h": 29
+     }
     },
     "mouth": {
-     "x": 175,
-     "y": 334,
-     "w": 70,
-     "h": 46,
+     "x": 164,
+     "y": 296,
+     "w": 82,
+     "h": 107,
      "files": {
       "rest": "key0.m.rest.png",
       "M": "key0.m.M.png",
       "A": "key0.m.A.png",
       "O": "key0.m.O.png",
       "E": "key0.m.E.png"
-     }
+     },
+     "erased": 3928,
+     "inkLeft": 0
     }
    },
    "pose": 0,
@@ -42,12 +54,12 @@
    "lift": 0,
    "ease": null,
    "faceBox": {
-    "x": 93,
-    "y": 234,
-    "w": 250,
-    "h": 138
+    "x": 75,
+    "y": 128,
+    "w": 268,
+    "h": 105
    },
-   "neckY": 389
+   "neckY": 233
   },
   {
    "file": "key1.png",
@@ -58,18 +70,37 @@
    "w": 460,
    "h": 821,
    "face": {
+    "blink": {
+     "file": "key1.blink.png",
+     "x": 90,
+     "y": 261,
+     "w": 286,
+     "h": 25
+    },
+    "eyes": {
+     "file": "key1.eyes.png",
+     "pupil": {
+      "file": "key1.pupils.png",
+      "x": 5,
+      "y": 5,
+      "w": 277,
+      "h": 16
+     }
+    },
     "mouth": {
-     "x": 177,
-     "y": 333,
-     "w": 66,
-     "h": 41,
+     "x": 158,
+     "y": 352,
+     "w": 98,
+     "h": 61,
      "files": {
       "rest": "key1.m.rest.png",
       "M": "key1.m.M.png",
       "A": "key1.m.A.png",
       "O": "key1.m.O.png",
       "E": "key1.m.E.png"
-     }
+     },
+     "erased": 2770,
+     "inkLeft": 0
     }
    },
    "pose": 1,
@@ -77,12 +108,12 @@
    "lift": 0,
    "ease": null,
    "faceBox": {
-    "x": 86,
-    "y": 104,
-    "w": 255,
-    "h": 260
+    "x": 52,
+    "y": 250,
+    "w": 361,
+    "h": 60
    },
-   "neckY": 395
+   "neckY": 309
   },
   {
    "file": "key2.png",
@@ -93,18 +124,27 @@
    "w": 526,
    "h": 861,
    "face": {
+    "blink": {
+     "file": "key2.blink.png",
+     "x": 139,
+     "y": 145,
+     "w": 146,
+     "h": 59
+    },
     "mouth": {
-     "x": 241,
-     "y": 328,
-     "w": 70,
-     "h": 50,
+     "x": 137,
+     "y": 176,
+     "w": 106,
+     "h": 149,
      "files": {
       "rest": "key2.m.rest.png",
       "M": "key2.m.M.png",
       "A": "key2.m.A.png",
       "O": "key2.m.O.png",
       "E": "key2.m.E.png"
-     }
+     },
+     "erased": 6529,
+     "inkLeft": 0
     }
    },
    "pose": 2,
@@ -113,12 +153,12 @@
    "ease": null,
    "sy": 1.02,
    "faceBox": {
-    "x": 126,
-    "y": 191,
-    "w": 255,
-    "h": 178
+    "x": 122,
+    "y": 103,
+    "w": 179,
+    "h": 179
    },
-   "neckY": 390
+   "neckY": 282
   },
   {
    "file": "key1.png",
@@ -129,18 +169,37 @@
    "w": 460,
    "h": 821,
    "face": {
+    "blink": {
+     "file": "key1.blink.png",
+     "x": 90,
+     "y": 261,
+     "w": 286,
+     "h": 25
+    },
+    "eyes": {
+     "file": "key1.eyes.png",
+     "pupil": {
+      "file": "key1.pupils.png",
+      "x": 5,
+      "y": 5,
+      "w": 277,
+      "h": 16
+     }
+    },
     "mouth": {
-     "x": 177,
-     "y": 333,
-     "w": 66,
-     "h": 41,
+     "x": 158,
+     "y": 352,
+     "w": 98,
+     "h": 61,
      "files": {
       "rest": "key1.m.rest.png",
       "M": "key1.m.M.png",
       "A": "key1.m.A.png",
       "O": "key1.m.O.png",
       "E": "key1.m.E.png"
-     }
+     },
+     "erased": 2770,
+     "inkLeft": 0
     }
    },
    "pose": 1,
@@ -149,12 +208,12 @@
    "ease": null,
    "sy": 0.98,
    "faceBox": {
-    "x": 86,
-    "y": 104,
-    "w": 255,
-    "h": 260
+    "x": 52,
+    "y": 250,
+    "w": 361,
+    "h": 60
    },
-   "neckY": 395
+   "neckY": 309
   },
   {
    "file": "key2.png",
@@ -165,18 +224,27 @@
    "w": 526,
    "h": 861,
    "face": {
+    "blink": {
+     "file": "key2.blink.png",
+     "x": 139,
+     "y": 145,
+     "w": 146,
+     "h": 59
+    },
     "mouth": {
-     "x": 241,
-     "y": 328,
-     "w": 70,
-     "h": 50,
+     "x": 137,
+     "y": 176,
+     "w": 106,
+     "h": 149,
      "files": {
       "rest": "key2.m.rest.png",
       "M": "key2.m.M.png",
       "A": "key2.m.A.png",
       "O": "key2.m.O.png",
       "E": "key2.m.E.png"
-     }
+     },
+     "erased": 6529,
+     "inkLeft": 0
     }
    },
    "pose": 2,
@@ -185,12 +253,12 @@
    "ease": null,
    "sy": 1.02,
    "faceBox": {
-    "x": 126,
-    "y": 191,
-    "w": 255,
-    "h": 178
+    "x": 122,
+    "y": 103,
+    "w": 179,
+    "h": 179
    },
-   "neckY": 390
+   "neckY": 282
   },
   {
    "file": "key3.png",
@@ -201,18 +269,27 @@
    "w": 473,
    "h": 870,
    "face": {
-    "mouth": {
+    "blink": {
+     "file": "key3.blink.png",
      "x": 255,
-     "y": 373,
-     "w": 72,
-     "h": 41,
+     "y": 186,
+     "w": 143,
+     "h": 25
+    },
+    "mouth": {
+     "x": 247,
+     "y": 297,
+     "w": 115,
+     "h": 55,
      "files": {
       "rest": "key3.m.rest.png",
       "M": "key3.m.M.png",
       "A": "key3.m.A.png",
       "O": "key3.m.O.png",
       "E": "key3.m.E.png"
-     }
+     },
+     "erased": 3427,
+     "inkLeft": 0
     }
    },
    "pose": 3,
@@ -220,12 +297,12 @@
    "lift": 0,
    "ease": null,
    "faceBox": {
-    "x": 157,
-    "y": 237,
-    "w": 255,
-    "h": 169
+    "x": 239,
+    "y": 175,
+    "w": 176,
+    "h": 60
    },
-   "neckY": 426
+   "neckY": 234
   },
   {
    "file": "key4.png",
@@ -236,18 +313,27 @@
    "w": 458,
    "h": 848,
    "face": {
+    "blink": {
+     "file": "key4.blink.png",
+     "x": 298,
+     "y": 212,
+     "w": 102,
+     "h": 60
+    },
     "mouth": {
-     "x": 226,
-     "y": 364,
-     "w": 69,
-     "h": 35,
+     "x": 312,
+     "y": 243,
+     "w": 91,
+     "h": 105,
      "files": {
       "rest": "key4.m.rest.png",
       "M": "key4.m.M.png",
       "A": "key4.m.A.png",
       "O": "key4.m.O.png",
       "E": "key4.m.E.png"
-     }
+     },
+     "erased": 3473,
+     "inkLeft": 0
     }
    },
    "pose": 4,
@@ -256,12 +342,12 @@
    "ease": null,
    "sy": 0.97,
    "faceBox": {
-    "x": 136,
-    "y": 223,
-    "w": 251,
-    "h": 168
+    "x": 288,
+    "y": 169,
+    "w": 122,
+    "h": 182
    },
-   "neckY": 411
+   "neckY": 351
   },
   {
    "file": "key3.png",
@@ -272,18 +358,27 @@
    "w": 473,
    "h": 870,
    "face": {
-    "mouth": {
+    "blink": {
+     "file": "key3.blink.png",
      "x": 255,
-     "y": 373,
-     "w": 72,
-     "h": 41,
+     "y": 186,
+     "w": 143,
+     "h": 25
+    },
+    "mouth": {
+     "x": 247,
+     "y": 297,
+     "w": 115,
+     "h": 55,
      "files": {
       "rest": "key3.m.rest.png",
       "M": "key3.m.M.png",
       "A": "key3.m.A.png",
       "O": "key3.m.O.png",
       "E": "key3.m.E.png"
-     }
+     },
+     "erased": 3427,
+     "inkLeft": 0
     }
    },
    "pose": 3,
@@ -291,12 +386,12 @@
    "lift": 0,
    "ease": null,
    "faceBox": {
-    "x": 157,
-    "y": 237,
-    "w": 255,
-    "h": 169
+    "x": 239,
+    "y": 175,
+    "w": 176,
+    "h": 60
    },
-   "neckY": 426
+   "neckY": 234
   },
   {
    "file": "key4.png",
@@ -307,18 +402,27 @@
    "w": 458,
    "h": 848,
    "face": {
+    "blink": {
+     "file": "key4.blink.png",
+     "x": 298,
+     "y": 212,
+     "w": 102,
+     "h": 60
+    },
     "mouth": {
-     "x": 226,
-     "y": 364,
-     "w": 69,
-     "h": 35,
+     "x": 312,
+     "y": 243,
+     "w": 91,
+     "h": 105,
      "files": {
       "rest": "key4.m.rest.png",
       "M": "key4.m.M.png",
       "A": "key4.m.A.png",
       "O": "key4.m.O.png",
       "E": "key4.m.E.png"
-     }
+     },
+     "erased": 3473,
+     "inkLeft": 0
     }
    },
    "pose": 4,
@@ -327,12 +431,12 @@
    "ease": null,
    "sy": 0.97,
    "faceBox": {
-    "x": 136,
-    "y": 223,
-    "w": 251,
-    "h": 168
+    "x": 288,
+    "y": 169,
+    "w": 122,
+    "h": 182
    },
-   "neckY": 411
+   "neckY": 351
   },
   {
    "file": "key5.png",
@@ -343,18 +447,27 @@
    "w": 467,
    "h": 861,
    "face": {
+    "blink": {
+     "file": "key5.blink.png",
+     "x": 148,
+     "y": 206,
+     "w": 224,
+     "h": 20
+    },
     "mouth": {
-     "x": 210,
-     "y": 230,
-     "w": 55,
-     "h": 22,
+     "x": 212,
+     "y": 293,
+     "w": 137,
+     "h": 135,
      "files": {
       "rest": "key5.m.rest.png",
       "M": "key5.m.M.png",
       "A": "key5.m.A.png",
       "O": "key5.m.O.png",
       "E": "key5.m.E.png"
-     }
+     },
+     "erased": 7369,
+     "inkLeft": 0
     }
    },
    "pose": 5,
@@ -362,12 +475,12 @@
    "lift": 0,
    "ease": null,
    "faceBox": {
-    "x": 150,
-    "y": 126,
-    "w": 259,
-    "h": 119
+    "x": 120,
+    "y": 199,
+    "w": 281,
+    "h": 42
    },
-   "neckY": 259
+   "neckY": 241
   },
   {
    "file": "key6.png",
@@ -378,18 +491,27 @@
    "w": 468,
    "h": 845,
    "face": {
+    "blink": {
+     "file": "key6.blink.png",
+     "x": 111,
+     "y": 247,
+     "w": 200,
+     "h": 21
+    },
     "mouth": {
-     "x": 188,
-     "y": 221,
-     "w": 54,
-     "h": 21,
+     "x": 203,
+     "y": 290,
+     "w": 123,
+     "h": 184,
      "files": {
       "rest": "key6.m.rest.png",
       "M": "key6.m.M.png",
       "A": "key6.m.A.png",
       "O": "key6.m.O.png",
       "E": "key6.m.E.png"
-     }
+     },
+     "erased": 9380,
+     "inkLeft": 0
     }
    },
    "pose": 6,
@@ -397,12 +519,12 @@
    "lift": 0,
    "ease": null,
    "faceBox": {
-    "x": 139,
-    "y": 120,
-    "w": 251,
-    "h": 115
+    "x": 86,
+    "y": 239,
+    "w": 250,
+    "h": 46
    },
-   "neckY": 249
+   "neckY": 285
   }
  ],
  "sfx": []

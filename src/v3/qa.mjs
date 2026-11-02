@@ -54,6 +54,47 @@ export async function checkPack(charDir, action, { rig, log = () => {} } = {}) {
         else for (const f of Object.values(m.files)) if (!fs.existsSync(path.join(dir, f))) rows.push({ level: FAIL, where, msg: `mouth patch ${f} missing` });
       } else rows.push({ level: WARN, where, msg: 'no mouth patch: this key keeps the drawn mouth through the line' });
     }
+    // --- is the face patch actually ON the face? -------------------------------------------------
+    // These are the checks that would have caught a mouth patch landing on a nose, a chest or the
+    // sari, and the "two mouths" bug, without anyone having to eyeball a render.
+    if (K.face && K.face.mouth && K.faceBox) {
+      const m = K.face.mouth, fbx = K.faceBox;
+      const mcx = m.x + m.w / 2, mcy = m.y + m.h / 2;
+      if (mcx < fbx.x || mcx > fbx.x + fbx.w || mcy < fbx.y || mcy > fbx.y + fbx.h * 1.15) {
+        rows.push({ level: FAIL, where, msg: `mouth patch centre (${Math.round(mcx)},${Math.round(mcy)}) is outside the face (${fbx.x},${fbx.y} ${fbx.w}x${fbx.h})` });
+      }
+      if (K.face.blink) {
+        const b = K.face.blink, bcx = b.x + b.w / 2, bcy = b.y + b.h / 2;
+        if (bcy > fbx.y + fbx.h * 0.62 || bcx < fbx.x - fbx.w * 0.1 || bcx > fbx.x + fbx.w * 1.1) {
+          rows.push({ level: FAIL, where, msg: 'eye/blink patch is not in the upper part of the face (it is not on the eyes)' });
+        }
+      }
+      // Is the mouth patch WIDE enough for the drawn mouth? Look at the patch's own rows: ink just
+      // outside its left and right edges, at the same height, means the drawn mouth sticks out and a
+      // second mouth will show. (Ink above is a moustache, ink below is a chin — not this check.)
+      const inkAt = (x, y) => {
+        if (x < 0 || y < 0 || x >= im.w || y >= im.h) return false;
+        const i = (y * im.w + x) * 4;
+        if (im.px[i + 3] < 128) return false;
+        const r = im.px[i], g = im.px[i + 1], b2 = im.px[i + 2];
+        return (r < 110 && g < 110 && b2 < 130) || (b2 > 90 && b2 > r + 40 && b2 > g + 15);
+      };
+      // only the mouth's own rows and a short reach either side: a wide band catches cheek lines, the
+      // side of the nose and earrings, which legitimately sit beside a mouth and mean nothing here
+      let inside = 0, beside = 0;
+      const padX = Math.round(m.w * 0.4);
+      const y0 = Math.max(0, Math.round(m.y + m.h * 0.2)), y1 = Math.min(im.h, Math.round(m.y + m.h * 0.8));
+      for (let y = y0; y < y1; y++) {
+        for (let x = Math.max(0, m.x); x < Math.min(im.w, m.x + m.w); x++) if (inkAt(x, y)) inside++;
+        for (let x = Math.max(0, m.x - padX); x < Math.max(0, m.x - 1); x++) if (inkAt(x, y)) beside++;
+        for (let x = Math.min(im.w, m.x + m.w + 1); x < Math.min(im.w, m.x + m.w + padX); x++) if (inkAt(x, y)) beside++;
+      }
+      // gross misses only: cheek lines and earrings legitimately sit beside a mouth, so this is a
+      // backstop, and `rigpop-motion faces <char> --audit` writes the picture to eyeball
+      if (inside > 10 && beside / inside > 1.2) {
+        rows.push({ level: FAIL, where, msg: `drawn mouth ink sticks out past the patch (${beside} px beside vs ${inside} px inside) — the old mouth will show as a second mouth` });
+      }
+    }
     if (K.neckY == null) rows.push({ level: WARN, where, msg: 'no neck line: the head cannot tip on this key (re-run `rigpop-motion faces`)' });
     else if (K.neckY < K.h * 0.08 || K.neckY > K.h * 0.75) rows.push({ level: WARN, where, msg: `neck line looks wrong (${K.neckY} of ${K.h} px)` });
 
@@ -139,7 +180,9 @@ export async function checkScript(file) {
   return rows;
 }
 
-export function report(rows, { log = console.log, name = '' } = {}) {
+export function report(rows0, { log = console.log, name = '' } = {}) {
+  const seen = new Set();
+  const rows = rows0.filter((r) => { const k = `${r.level}|${r.where}|${r.msg}`; if (seen.has(k)) return false; seen.add(k); return true; });
   const fails = rows.filter((r) => r.level === FAIL), warns = rows.filter((r) => r.level === WARN);
   for (const r of rows) log(`  ${r.level === FAIL ? 'FAIL' : 'warn'}  ${r.where.padEnd(28)} ${r.msg}`);
   log(`  ${name ? name + ': ' : ''}${rows.length - fails.length - warns.length >= 0 ? '' : ''}${fails.length} fail, ${warns.length} warn`);

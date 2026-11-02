@@ -21,27 +21,31 @@
    "t": 0.4,
    "lift": 0,
    "face": {
-    "mouth": {
-     "x": 84,
-     "y": 52,
-     "w": 50,
-     "h": 34,
-     "files": {
-      "rest": "key0.m.rest.png",
-      "M": "key0.m.M.png",
-      "A": "key0.m.A.png",
-      "O": "key0.m.O.png",
-      "E": "key0.m.E.png"
+    "blink": {
+     "file": "key0.blink.png",
+     "x": 81,
+     "y": 61,
+     "w": 78,
+     "h": 34
+    },
+    "eyes": {
+     "file": "key0.eyes.png",
+     "pupil": {
+      "file": "key0.pupils.png",
+      "x": 5,
+      "y": 5,
+      "w": 69,
+      "h": 25
      }
     }
    },
    "faceBox": {
-    "x": 92,
-    "y": 6,
-    "w": 87,
-    "h": 68
+    "x": 75,
+    "y": 42,
+    "w": 91,
+    "h": 91
    },
-   "neckY": 82
+   "neckY": 133
   }
  ]
 }
