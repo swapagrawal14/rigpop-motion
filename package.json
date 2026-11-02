@@ -24,6 +24,8 @@
     "v3:set": "node src/v3/cli.mjs set",
     "qa": "node src/v3/cli.mjs qa",
     "full-glass": "node src/v3/cli.mjs render scripts/full-glass.md -o out/full-glass.mp4 --crf 24",
+    "chappal": "node src/v3/cli.mjs render scripts/chappal-pro-max.md -o out/chappal-pro-max.mp4 --crf 24",
+    "lines": "node tools/lines.mjs",
     "characters": "node tools/fix-bunty.mjs && node tools/make-chotu.mjs"
   },
   "dependencies": {

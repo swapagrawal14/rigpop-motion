@@ -27,6 +27,10 @@ export const MARKS = {
   counter: { x: 345, z: 0 },
   'counter-mid': { x: 470, z: 0.04 },
   'counter-right': { x: 650, z: 0.42 },
+  // the near edge of the counter, for a set where two people stand at a table instead of behind it
+  'desk-left': { x: 195, z: 0 },
+  'desk-mid': { x: 450, z: 0.03 },
+  'desk-right': { x: 705, z: 0.06 },
   'off-left': { x: -220, z: 0.95 },
   'off-right': { x: 1120, z: 0.95 },
 };

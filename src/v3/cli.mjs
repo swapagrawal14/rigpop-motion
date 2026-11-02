@@ -52,8 +52,10 @@ async function load(file) {
   {
     // project-local gesture clips (registered into CLIPS on import)
     const { pathToFileURL } = await import('node:url');
-    const f = path.resolve('tools/clips/chai.mjs');
-    if (fs.existsSync(f)) await import(pathToFileURL(f).href);
+    const dir = path.resolve('tools/clips');
+    for (const f of fs.existsSync(dir) ? fs.readdirSync(dir).filter((n) => n.endsWith('.mjs')).sort() : []) {
+      await import(pathToFileURL(path.join(dir, f)).href);
+    }
   }
   const t0 = Date.now();
   const S = await compile(src, { baseDir: path.dirname(path.resolve(file)), log: (m) => log(`  ${m}`), resolveRig });

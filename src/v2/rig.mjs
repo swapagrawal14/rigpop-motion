@@ -37,6 +37,34 @@ export const RIGS = {
     eyeX: 33, eyeY: 10, eyeRx: 19, eyeRy: 24, pupil: 10, mouthY: 46, mouthW: 22,
     hairStyle: 'pigtails', accessory: 'bows', dress: true,
   },
+
+  // the viva room: a final-year student who believes in her project, and the man who marks it
+  pihu: {
+    id: 'pihu', seed: 21,
+    skin: '#e8b184', skinShade: '#c1845c', blush: '#f0796a', lip: '#7a2a24',
+    hair: '#241d27', hairHi: '#423748',
+    top: '#f2b23c', topShade: '#c4851f', topText: '', topTextCol: '#6b4712',
+    bottom: '#2f4a6b', bottomShade: '#22374f', foot: '#f2f0e8', footShade: '#c9c5b8',
+    headRx: 82, headRy: 87, neck: 20, neckW: 34,
+    torsoH: 192, shoulderW: 158, waistW: 138, shoulderX: 66, shoulderInset: 16,
+    upper: 92, fore: 86, armW: 26, hand: 15,
+    hipX: 30, thigh: 104, shin: 98, legW: 36,
+    eyeX: 33, eyeY: 6, eyeRx: 17, eyeRy: 21, pupil: 8.4, mouthY: 48, mouthW: 24,
+    hairStyle: 'messy', accessory: null, dress: false, sleeve: false, lanyard: '#2f4a6b',
+  },
+  prof: {
+    id: 'prof', seed: 33,
+    skin: '#c98a5e', skinShade: '#9d6440', blush: '#e07a63', lip: '#6e2622',
+    hair: '#cfc7bd', hairHi: '#ece7e0',
+    top: '#6f4a30', topShade: '#4c3320', topText: '', topTextCol: '#fff',
+    bottom: '#39414f', bottomShade: '#282e39', foot: '#2b211a', footShade: '#1c1511',
+    headRx: 94, headRy: 100, neck: 22, neckW: 38,
+    torsoH: 174, shoulderW: 152, waistW: 156, shoulderX: 63, shoulderInset: 18,
+    upper: 88, fore: 84, armW: 28, hand: 15,
+    hipX: 30, thigh: 98, shin: 92, legW: 38,
+    eyeX: 37, eyeY: 6, eyeRx: 18, eyeRy: 21, pupil: 9, mouthY: 54, mouthW: 26,
+    hairStyle: 'bald', accessory: 'glasses', moustache: true, dress: false, sleeve: false,
+  },
 };
 
 export function basePose() {
@@ -303,6 +331,11 @@ function hairBack(g, R, H, tx, flop) {
       g.bezierCurveTo(bx + i * 20, ry * 0.15 + flop * 4, bx - i * 6, ry * 0.4, bx + i * 10, ry * 0.62 + flop * 6);
       stroke(g, LW * 3.2, INK); stroke(g, LW * 1.6, R.hair);
     }
+  } else if (R.hairStyle === 'bald') {
+    // three grey tufts over the ears: bald on top, stubborn at the sides
+    for (const i of [-1, 1]) {
+      cel(g, (q) => { q.moveTo(i * rx * 0.7, -ry * 0.34); q.quadraticCurveTo(i * rx * 1.34, -ry * 0.1, i * rx * 1.12, ry * 0.34); q.quadraticCurveTo(i * rx * 0.92, ry * 0.06, i * rx * 0.66, -ry * 0.06); q.closePath(); }, R.hair, R.hairHi, null);
+    }
   } else if (R.hairStyle === 'pigtails') {
     cel(g, (q) => ellipse(q, tx * 0.1, -ry * 0.12, rx * 1.06, ry * 0.98), R.hair, null, null);
     for (const i of [-1, 1]) {
@@ -345,6 +378,14 @@ function hairFront(g, R, tx, flop) {
       g.beginPath(); g.moveTo(b.x - 10, b.y + 8); g.bezierCurveTo(b.x - 14, tip.y + 4, tip.x + 12, tip.y - 8, tip.x + 4, tip.y + 6); g.quadraticCurveTo(b.x + 2, b.y - 2, b.x + 12, b.y + 8); g.closePath();
       fill(g, R.hair); stroke(g, LW * 0.85);
     }
+  } else if (R.hairStyle === 'bald') {
+    // a bare scalp with a shine arc, and the two temples left standing
+    g.globalAlpha = 0.5;
+    cel(g, (q) => { q.moveTo(-rx * 0.5, -ry * 0.78); q.quadraticCurveTo(0, -ry * 0.94, rx * 0.42, -ry * 0.7); }, null, null, null, LW * 1.4);
+    g.globalAlpha = 1;
+    for (const i of [-1, 1]) {
+      cel(g, (q) => { q.moveTo(i * rx * 0.94, -ry * 0.3); q.quadraticCurveTo(i * rx * 1.02, -ry * 0.62, i * rx * 0.62, -ry * 0.6); q.quadraticCurveTo(i * rx * 0.78, -ry * 0.34, i * rx * 0.86, -ry * 0.18); q.closePath(); }, R.hair, R.hairHi, null);
+    }
   } else if (R.hairStyle === 'pigtails') {
     const f = tx * 0.55;
     const cap = (q) => {
@@ -380,6 +421,35 @@ function shades(g, R, tx, up, turn) {
     g.beginPath(); g.moveTo(cx + i * (R.eyeX * s + 23 * s), y - 2); g.lineTo(i * R.headRx * 0.98, y + lerp(-6, 10, up));
     stroke(g, LW * 1.6, INK); stroke(g, LW * 0.6, '#e2b23c');
   }
+}
+
+function glasses(g, R, tx, turn) {
+  // clear round spectacles: steel rims, a lens glint, and a bridge over the nose
+  const s = 1.06, y = R.eyeY + 2;
+  for (const i of [-1, 1]) {
+    const ex = tx * 0.9 + i * R.eyeX * (1 - 0.16 * i * turn);
+    g.beginPath(); ellipse(g, ex, y, 25 * s, 25 * s); fill(g, 'rgba(196,232,255,0.16)');
+    g.beginPath(); ellipse(g, ex, y, 25 * s, 25 * s); stroke(g, LW * 2.0, INK); stroke(g, LW * 0.9, '#5d6472');
+    g.save(); g.beginPath(); ellipse(g, ex, y, 24 * s, 24 * s); g.clip();
+    g.beginPath(); ellipse(g, ex - 8 * s, y - 8 * s, 11 * s, 9 * s, -0.6); fill(g, 'rgba(255,255,255,0.5)');
+    g.restore();
+    g.beginPath(); g.moveTo(ex + i * 24 * s, y - 2); g.lineTo(i * R.headRx * 1.02, y + 6); stroke(g, LW * 1.4, INK);
+  }
+  g.beginPath(); g.moveTo(tx * 0.9 - R.eyeX + 24, y - 1); g.quadraticCurveTo(tx * 0.9, y - 12, tx * 0.9 + R.eyeX - 24, y - 1);
+  stroke(g, LW * 1.8, INK); stroke(g, LW * 0.7, '#5d6472');
+}
+
+function moustache(g, R, tx) {
+  // a pencil moustache sitting above the lip, so the mouth still reads through it
+  const w = R.mouthW * 1.15, y = R.mouthY - 12, cx = tx * 1.1;
+  cel(g, (q) => {
+    q.moveTo(cx - w, y + 4);
+    q.quadraticCurveTo(cx - w * 0.5, y - 12, cx, y - 4);
+    q.quadraticCurveTo(cx + w * 0.5, y - 12, cx + w, y + 4);
+    q.quadraticCurveTo(cx + w * 0.45, y + 2, cx, y + 9);
+    q.quadraticCurveTo(cx - w * 0.45, y + 2, cx - w, y + 4);
+    q.closePath();
+  }, R.hair, R.hairHi, (q) => ellipse(q, cx, y - 2, w * 0.6, 3));
 }
 
 export function drawHead(g, R, P, J) {
@@ -419,7 +489,9 @@ export function drawHead(g, R, P, J) {
   // nose
   g.beginPath(); g.moveTo(tx * 1.15 - 5, 28); g.quadraticCurveTo(tx * 1.15 + 6, 36, tx * 1.15 - 2, 40); stroke(g, LW * 0.8);
   // mouth
+  if (R.moustache) moustache(g, R, tx);
   g.save(); g.translate(tx * 1.1, R.mouthY); mouth(g, R, F.mouth, F.open, 1); g.restore();
+  if (R.accessory === 'glasses') glasses(g, R, tx, turn);
   hairFront(g, R, tx, P.hairFlop);
   if (R.accessory === 'shades') shades(g, R, tx, F.shadesUp, turn);
   // sweat drop
@@ -513,7 +585,7 @@ export function sleeveGeom(R, P, J, side) {
   const S = J.arms[side], d = v.rot(v.sub(S.elbow, S.s), -P.lean);
   const phi = Math.atan2(sgn * d.x, d.y);
   const th0 = R.dress ? 0.42 : 0.32;
-  const th = th0 + clamp((phi - th0) * 0.3, -0.22, 0.24);
+  const th = th0 + clamp((phi - th0) * 0.78, -0.95, 0.95);
   const u = { x: sgn * Math.sin(th), y: Math.cos(th) }, n = { x: sgn * Math.cos(th), y: -Math.sin(th) };
   const Ls = R.upper * (R.dress ? 0.46 : 0.52);
   const wr = R.armW * (R.dress ? 0.8 : 0.76), wh = R.armW * (R.dress ? 0.92 : 0.8);
@@ -613,8 +685,35 @@ export function taperArm(g, S, E, W, w0, w1, fill, shadeCol, lw = LW, rootShade 
   }
 }
 
+// a college ID on a lanyard: the cheapest way to say "final year student" without a backpack
+function drawLanyard(g, R, P, J) {
+  const H = R.torsoH;
+  const n = { x: J.neckBase.x - J.hip.x, y: J.neckBase.y - J.hip.y };
+  const card = { x: n.x + (P.turn * 10), y: -H * 0.56 };
+  g.save(); g.translate(J.hip.x, J.hip.y); g.rotate(P.lean); g.scale(1, J.br);
+  for (const i of [-1, 1]) {
+    g.beginPath(); g.moveTo(n.x + i * 12, n.y + 6); g.quadraticCurveTo(n.x + i * 26, card.y - 26, card.x + i * 13, card.y);
+    stroke(g, 7, INK); stroke(g, 3.6, R.lanyard || '#2f4a6b');
+  }
+  cel(g, (q) => q.roundRect(card.x - 22, card.y - 4, 44, 58, 5), '#f6f3e6', '#ddd8c4', (q) => q.rect(card.x - 22, card.y - 4, 44, 12), LW * 0.7);
+  g.beginPath(); g.rect(card.x - 22, card.y - 4, 44, 12); fill(g, '#2f4a6b');
+  g.beginPath(); g.moveTo(card.x - 14, card.y + 20); g.lineTo(card.x + 14, card.y + 20);
+  g.moveTo(card.x - 14, card.y + 32); g.lineTo(card.x + 8, card.y + 32); stroke(g, 2.6, '#a9a493');
+  cel(g, (q) => ellipse(q, card.x + 0.5, card.y + 44, 6, 6), '#cfc7bd', '#b0a89c', null, LW * 0.6);
+  g.restore();
+}
+
 function drawArm(g, R, P, J, side, t, drawProp) {
   const A = P.arms[side], S = J.arms[side];
+  if (R.sleeve === false) {
+    // no sleeve polygons: one clean skin tube out of a rounded shoulder cap
+    cel(g, (q) => ellipse(q, S.s.x, S.s.y, R.armW * 0.6, R.armW * 0.6), R.skin, R.skinShade, null, 0);
+    taperArm(g, S.s, S.elbow, S.hand, R.armW * 0.58, R.armW * 0.46, R.skin, R.skinShade, LW, 0);
+    if (A.hold && drawProp) drawProp(g, A.hold, S.hand, S.ang, side, t, A);
+    drawHand(g, R, S.hand, S.ang, A.grip, side);
+    if (A.hold && A.hold.over && drawProp) drawProp(g, A.hold, S.hand, S.ang, side, t, A, true);
+    return;
+  }
   // start the arm inside the sleeve: no round cap at the shoulder, ever
   const d = v.sub(S.elbow, S.s), L = v.len(d) || 1;
   const s0 = { x: S.s.x + (d.x / L) * R.armW * 0.25, y: S.s.y + (d.y / L) * R.armW * 0.25 };
@@ -650,11 +749,17 @@ export function drawCharacter(g, R, P, J, { pass = 'body', t = 0, drawProp = nul
     for (const s of ['L', 'R']) if (P.arms[s].behind) drawArm(g, R, P, J, s, t, drawProp);
     drawNeck(g, R, P, J);
     drawTorso(g, R, P, J);
-    for (const s of ['L', 'R']) drawSleeve(g, R, P, J, s);
+    if (R.sleeve !== false) for (const s of ['L', 'R']) drawSleeve(g, R, P, J, s);
     drawHead(g, R, P, J);
-    for (const s of ['L', 'R']) if (!P.arms[s].front && !P.arms[s].behind) armAndSleeve(g, J, s, R.armW * 0.9, () => drawArm(g, R, P, J, s, t, drawProp), () => drawSleeve(g, R, P, J, s, { avoidHead: true }));
+    for (const s of ['L', 'R']) if (!P.arms[s].front && !P.arms[s].behind) {
+      if (R.sleeve === false) drawArm(g, R, P, J, s, t, drawProp);
+      else armAndSleeve(g, J, s, R.armW * 0.9, () => drawArm(g, R, P, J, s, t, drawProp), () => drawSleeve(g, R, P, J, s, { avoidHead: true }));
+    }
   } else {
-    for (const s of ['L', 'R']) if (P.arms[s].front) armAndSleeve(g, J, s, R.armW * 0.9, () => drawArm(g, R, P, J, s, t, drawProp), () => drawSleeve(g, R, P, J, s, { avoidHead: true }));
+    for (const s of ['L', 'R']) if (P.arms[s].front) {
+      if (R.sleeve === false) drawArm(g, R, P, J, s, t, drawProp);
+      else armAndSleeve(g, J, s, R.armW * 0.9, () => drawArm(g, R, P, J, s, t, drawProp), () => drawSleeve(g, R, P, J, s, { avoidHead: true }));
+    }
   }
 }
 

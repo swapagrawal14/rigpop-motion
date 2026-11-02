@@ -238,6 +238,12 @@ export async function compile(src, { baseDir = process.cwd(), log = () => {}, re
         else sceneEv.push({ t, key: 'panContent', val: rest[0] });
         break;
       case 'fridge': sceneEv.push({ t, key: 'fridge', val: rest[0] === 'open' ? 1 : 0 }); break;
+      // any other set switch: [scene chappalTaken on] reaches the set as st.chappalTaken = 1
+      case 'scene': {
+        const v = rest[1];
+        sceneEv.push({ t, key: rest[0], val: v === 'on' ? 1 : v === 'off' ? 0 : (Number.isFinite(Number(v)) ? Number(v) : v) });
+        break;
+      }
       default: throw new Error(`line ${it.lineNo}: unknown directive "[${it.raw}]"`);
     }
   }

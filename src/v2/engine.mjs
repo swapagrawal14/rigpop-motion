@@ -36,6 +36,7 @@ export function createEngine(S, hooks = {}) {
       else if (e.key === 'panContent') st.pan.content = e.val;
       else if (e.key === 'panMove') { st.pan.x = e.val.x; st.pan.y = e.val.y; }
       else if (e.key === 'fridge') st.fridgeOpen = e.val;
+      else st[e.key] = e.val;
     }
     const contrib = [];
     for (const A of S.actors.values()) for (const C of A.clips) {
