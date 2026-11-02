@@ -379,84 +379,55 @@ export function drawHeadImg(g, IR, R, P, J) {
 // the rig's breath, and the blink/mouth patches ride the same transform as the head, so a blink can
 // never slide off a tilted face. That is the difference between a slide-show of poses and a
 // character standing there, breathing, turning and nodding.
-// one drawn pose, fully composed: body, tipped head, face patches
+// one drawn pose, drawn exactly once, with its face patches riding the same transform
 function paintPose(g, IR, R, P, pack, j, lift, alpha, vel, microBase) {
   const K = pack.keys[j], img = pack.img[j];
   if (!K || !img || alpha <= 0.002) return;
   const k = IR._k || 1;
   const footX = K.foot.x, footY = K.foot.y;
-  const pivotY = K.neckY != null ? K.neckY - footY : -footY + 0.30 * K.h;
-  const hipY = -footY * 0.55;
-  const band = Math.max(6, K.h * 0.05);
-  const breath = (P.breath || 0) * 3.2;
-  const sway = (P.headTilt || 0) * 4.5 + (P.hipDX || 0) * 0.4;
   const micro = microBase;
-  // micro-motion is a FEW PIXELS: the head band is a separate opaque overlay drawn over the body, so
-  // moving it a long way does not read as a head moving, it reads as a second head — the drawing's own
-  // head stays visible where the overlay no longer covers it. (This used to move by up to half a head.)
-  const microCap = Math.max(1.5, K.h * 0.012 * (IR._k || 1));
-  const microX = clamp(Math.sin(micro * 1.13 + 1.1) * 0.55 * (k * 6), -microCap, microCap);
-  const microY = clamp(Math.sin(micro * 1.7) * 0.9 * (k * 6), -microCap, microCap);
-  // rotation about the neck is free — the head turns instead of sliding, so the band stays welded to
-  // the shoulders and there is no second head to see
-  const headRot = clamp((P.turn || 0) * 0.22 + (P.headTilt || 0) * 0.9, -0.2, 0.2) + 0.012 * Math.sin(micro * 2.1);
-  const headDX = clamp((P.headDX || 0) * 0.6 + (P.turn || 0) * 3 + microX, -microCap * 1.6, microCap * 1.6);
-  const headDY = clamp((P.headDY || 0) * 0.6 + microY, -microCap * 1.6, microCap * 1.6);
-  const bodyRot = clamp((P.lean || 0) * 0.4 + (P.hipDX || 0) * 0.002, -0.07, 0.07) + 0.006 * Math.sin(micro * 2.1);
+  // ONE rigid draw, no head/body split and no partial alpha anywhere. Any composite of a drawing with
+  // itself — a tipped head copy, a cross-fade in a band, a smear — leaves a zone where two copies of the
+  // same character are on screen at once, and at any real movement that zone reads as a ghost. So the
+  // whole drawing moves as one piece, and the face patches ride the same transform in image space, so
+  // they can never slide off the face.
+  //
+  // The performance numbers arrive per frame and can step. A drawn pose is heavy, so they are low-passed
+  // here: without that the drawing snaps between values on consecutive frames, which is the "shaky"
+  // look. On a pose change (a cut) the smoothing resets, because gliding in from the outgoing pose is a
+  // ghost of a different kind.
+  const poseId = `${pack.name}:${j}`;
+  if (IR._smId !== poseId) { IR._smId = poseId; IR._sm = null; }
+  if (!IR._sm) IR._sm = {};
+  const smooth = (key, target, rate = 0.16) => {
+    const prev = IR._sm[key];
+    IR._sm[key] = prev == null ? target : prev + (target - prev) * rate;
+    return IR._sm[key];
+  };
+  const microCap = Math.max(1.2, K.h * 0.006 * (IR._k || 1));
+  const microX = clamp(Math.sin(micro * 1.13 + 1.1) * 0.5 * (k * 5), -microCap, microCap);
+  const microY = clamp(Math.sin(micro * 1.7) * 0.7 * (k * 5), -microCap, microCap);
+  const breath = smooth('breath', (P.breath || 0) * 2.4, 0.2);
+  const sway = clamp(smooth('sway', (P.headTilt || 0) * 4 + (P.hipDX || 0) * 0.3) + microX, -26, 26);
+  const turn = clamp(smooth('turn', (P.turn || 0) * 0.06 + (P.headTilt || 0) * 0.1 + (P.lean || 0) * 0.08), -0.055, 0.055)
+    + 0.004 * Math.sin(micro * 1.9);
+  const hipY0 = -footY * 0.55;
   const squash = 1 + clamp((vel || 0) / 5000, -0.12, 0.18);
   const sxK = K.sx ?? 1, syK = K.sy ?? 1;
-  const base = () => { g.translate(sway, -lift - breath); g.scale((k * sxK) / Math.sqrt(squash), k * squash * syK); };
+  const base = () => {
+    g.translate(sway, -lift - breath + microY);
+    g.translate(0, hipY0); g.rotate(turn); g.translate(0, -hipY0);
+    g.scale((k * sxK) / Math.sqrt(squash), k * squash * syK);
+  };
 
-  {   // the BODY, with its head region faded out. The head is drawn separately below, so if the body
-    // copy still carried a head there would be two: the drawn one, sitting where the artist put it, and
-    // the tipped one on top. That is the overlap — a head that does not follow the turn and shows
-    // through wherever the tipped copy has moved off it. Body fades out above the neck, head fades out
-    // below it, so exactly one head is on screen at every angle.
-    const W = Math.ceil(img.width) + 4, H = Math.ceil(img.height) + 4;
-    if (!IR._bc || IR._bc.width < W || IR._bc.height < H) IR._bc = createCanvas(Math.max(W, IR._bc ? IR._bc.width : 0), Math.max(H, IR._bc ? IR._bc.height : 0));
-    const bc = IR._bc, bg = bc.getContext('2d');
-    bg.setTransform(1, 0, 0, 1, 0, 0);
-    bg.globalCompositeOperation = 'source-over'; bg.globalAlpha = 1;
-    bg.clearRect(0, 0, bc.width, bc.height);
-    bg.drawImage(img, 0, 0);
-    bg.globalCompositeOperation = 'destination-in';
-    const bgy = pivotY + footY;                       // the neck line, in image pixels
-    const bgr = bg.createLinearGradient(0, bgy - band * 2.2, 0, bgy + band * 2.2);
-    bgr.addColorStop(0, 'rgba(0,0,0,0)'); bgr.addColorStop(0.55, 'rgba(0,0,0,1)'); bgr.addColorStop(1, 'rgba(0,0,0,1)');
-    bg.fillStyle = bgr; bg.fillRect(0, 0, bc.width, bc.height);
-    bg.globalCompositeOperation = 'source-over';
-
-    g.save(); g.globalAlpha *= alpha; base();
-    g.translate(0, hipY); g.rotate(bodyRot); g.translate(0, -hipY);
-    g.drawImage(bc, 0, 0, bc.width, bc.height, -footX, -footY, bc.width, bc.height);
-    g.restore();
-  }
-
-  {   // head, tipped about the neck line and faded into the body with a soft gradient
-    const W = Math.ceil(img.width) + 4, H = Math.ceil(img.height) + 4;
-    if (!IR._oc || IR._oc.width < W || IR._oc.height < H) IR._oc = createCanvas(Math.max(W, IR._oc ? IR._oc.width : 0), Math.max(H, IR._oc ? IR._oc.height : 0));
-    const oc = IR._oc, og = oc.getContext('2d');
-    og.setTransform(1, 0, 0, 1, 0, 0); og.globalAlpha = 1; og.globalCompositeOperation = 'source-over';
-    og.clearRect(0, 0, oc.width, oc.height);
-    og.save(); og.translate(footX, footY);
-    og.translate(headDX, headDY); og.translate(0, pivotY); og.rotate(headRot); og.translate(0, -pivotY);
-    og.drawImage(img, -footX, -footY); og.restore();
-    og.globalCompositeOperation = 'destination-in';
-    const gy = pivotY + footY;
-    const gr = og.createLinearGradient(0, gy - band * 2.2, 0, gy + band * 2.2);
-    gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.45, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-    og.fillStyle = gr; og.fillRect(0, 0, oc.width, oc.height);
-    og.globalCompositeOperation = 'source-over';
-    g.save(); g.globalAlpha *= alpha; base();
-    g.drawImage(oc, 0, 0, oc.width, oc.height, -footX, -footY, oc.width, oc.height);
-    g.restore();
-  }
+  g.save(); g.globalAlpha *= alpha; base();
+  g.drawImage(img, -footX, -footY);
+  g.restore();
 
   const patch = pack.face && pack.face[j];
   if (patch) {
     const F = P.face;
     g.save(); g.globalAlpha *= alpha; base();
-    g.translate(headDX, headDY); g.translate(0, pivotY); g.rotate(headRot); g.translate(0, -pivotY);
     const px = (box) => [-footX + box.x, -footY + box.y];
     if (patch.blink && (F.blink ?? 0) > 0.45) {
       const b = K.face.blink, [bx, by] = px(b);
@@ -496,56 +467,11 @@ export function drawPack(g, IR, R, P) {
   const now = P.__t ?? 0;
   const clock = now + pk.u;
 
-  // which pose was on screen before this one, and how long ago did it change
-  const cur = `${pk.name}:${st.i}`;
-  if (IR._cur !== cur) {
-    IR._prev = IR._curPose || null;
-    IR._swapAt = now;
-    IR._cur = cur;
-  }
-  IR._curPose = { pack, i: st.i, lift: st.lift, vel: st.vel };
-
-  // cross-fade a pose change in over ~0.24 s (a held key also fades in from its own previous key)
-  // A dissolve between two DIFFERENT drawings is a double exposure, not motion — two complete bodies
-  // at half opacity read as ghosts. So: keys of the same pack dissolve (same character, same
-  // framing), a switch between packs cuts. The dissolve is short enough to read as motion blur.
-  const XF = 0.12;
-  const sinceSwap = IR._swapAt == null ? 99 : now - IR._swapAt;
-  const q = clamp(sinceSwap / XF, 0, 1);
-  const samePack = !!(IR._prev && IR._prev.pack === pack);
-  // the incoming pose is ALWAYS fully opaque — a clip that starts on a new pose must not fade up out
-  // of the background (that is how a character ends up looking like a ghost for the first frames);
-  // the outgoing pose is only ever a faint trail behind it
-  const curA = 1;
-  // ...and NOTHING of the outgoing pose behind it: two drawings of the same character at partial
-  // opacity is a double exposure however short it is, and the pose packs are cut from separate
-  // drawings whose heads do not line up, so a "trail" is a second head, not motion blur. A pose
-  // change is a cut — the life comes from the keys changing, not from dissolving between them.
-  const blendPrev = 0;
-
-  // smear ghosts while the body travels fast (a jump)
-  const vel = st.vel;
-  if (Math.abs(vel) > 250) {
-    const sq = 1 + Math.min(0.25, Math.abs(vel) / 4000);
-    const K = pack.keys[st.i];
-    for (let i = 3; i >= 1; i--) {
-      g.save(); g.globalAlpha *= 0.16;
-      g.translate(0, (vel / 30) * i * 0.5);
-      g.scale((k * (K.sx ?? 1)) / Math.sqrt(sq), k * sq * (K.sy ?? 1));
-      g.drawImage(pack.img[st.i], -K.foot.x, -K.foot.y);
-      g.restore();
-    }
-    g.save(); g.globalAlpha = clamp((Math.abs(vel) - 250) / 600, 0, 0.7);
-    g.beginPath();
-    for (const x2 of [-0.32, -0.12, 0.1, 0.3]) { const yy = -st.lift - pack.height * k * (0.3 + Math.abs(x2)); g.moveTo(x2 * pack.width * k, yy - Math.sign(vel) * 30); g.lineTo(x2 * pack.width * k, yy - Math.sign(vel) * (30 + Math.abs(vel) / 8)); }
-    stroke(g, 4, INK); g.restore();
-  }
-
-  if (blendPrev > 0.002) {
-    const pr = IR._prev;
-    paintPose(g, IR, R, P, pr.pack, pr.i, pr.lift, blendPrev, pr.vel, clock + 11);
-  }
-  paintPose(g, IR, R, P, pack, st.i, st.lift, curA, st.vel, clock + st.i * 3.7);
+  // A pose change is a CUT. Nothing of the outgoing pose is left on screen — not a trail, not a
+  // dissolve, not a smear — because every one of those is the same drawing composited with itself and
+  // reads as a ghost. The character's life comes from the pose changing and from the motion inside a
+  // pose (sway, turn, breath, blinks, lip-sync), never from blending two drawings.
+  paintPose(g, IR, R, P, pack, st.i, st.lift, 1, st.vel, clock + st.i * 3.7);
   return true;
 }
 
