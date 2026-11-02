@@ -8,6 +8,7 @@ New cast, new set, and the final answer to "the gestures look wrong".
 | script | `scripts/chappal-pro-max.md` |
 | render | `npm run chappal` (~33 s on this box) |
 | cast | `characters/pihu` (student), `characters/shukla` (examiner) |
+| packs | `listen` `think` `point` `explain` `talk`, one key each |
 | set | `tools/scenes/viva-room.mjs` |
 
 ## The idea

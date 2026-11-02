@@ -81,7 +81,7 @@ assembles the puppet, because that puppet would be *the other character* on scre
 ### A whole reel with no puppets: “Chappal Pro Max”
 
 `scripts/chappal-pro-max.md` (32 s, 12 lines) is the worked example of the strict version of the
-rule: **two characters, four full-body drawn poses each, zero skeleton**. No part assembly, no IK,
+rule: **two characters, four acting poses each plus a `talk` pack, zero skeleton**. No part assembly, no IK,
 no blends — the drawing is swapped on a hard cut and the camera, breath, blinks and mouth carry the
 life. Poses are chosen by the emotion of the line (`listen` / `think` / `point` / `explain`) and
 held per beat with `[P poses point 60s &]`, so nothing rotates through a loop.
