@@ -23,6 +23,13 @@
   and let the drawn art carry the gesture.
 - A puppet/IK arm move is allowed only for **tiny** motions (a small stir loop, a hand resting) and only between two drawn poses. If a move is bigger than about 30°, generate a pose instead.
 - Every action in a script must name a pose pack (`[K pose-pack stir 2s]`). If no pack exists, generate one before rendering.
+- **A speaking character must not hold one drawing.** Any line longer than about a second gets a
+  gesture rotation, not a pose: `[K poses talk point talk idle 60s &]` shows the packs in turn, each
+  holding the clip's hold time (~1.7 s; the number in the args overrides it), and a multi-key pack
+  (`talk` has three keys) cycles inside its own turn. Every change is a cut, never a cross-fade, so no
+  pose is ever on screen twice. Keep the home pose first, put a gesture in the middle, and do not use a
+  pose that reads as a resting posture (hands on hips, arms folded, sipping) as the *second* position in
+  the middle of a sentence.
 - Same character everywhere: reuse the exact style-bible text and model-sheet reference in every pose prompt, and regenerate any pose whose face or outfit drifts.
 - QA before delivering: check a contact sheet and consecutive-frame strips for pops, jitter, detached parts or style drift. Fix them, and don't ship abrupt moves.
 

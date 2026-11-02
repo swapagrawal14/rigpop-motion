@@ -180,6 +180,22 @@ function shirtText(im, T) {
 
 // The script verb. The puppet keeps solving underneath (camera framing, FX anchors), the
 // drawer swaps in the pack's keys while the clip's weight is up.
+// [S poses talk talk point idle 60s &] — a GESTURE ROTATION rather than one held drawing. While the
+// line is spoken the character keeps changing pose on a beat, the way people gesture when they talk:
+// the first pack is the home pose, the rest are the gestures it moves through, and a multi-key pack
+// (talk has three keys) cycles inside its own turn. Every change is a cut, like a held drawing being
+// swapped in a 2D scene — nothing is cross-faded, so no pose is ever on screen twice.
+CLIPS['poses'] = {
+  dur: 1.0, rin: 0.01, rout: 0.01, linear: true,
+  f(c) {
+    const names = c.args.map((a) => String(a)).filter((a) => /^[a-z][a-z0-9-]*$/i.test(a) && !/^\d/.test(a));
+    const hold = Math.max(0.6, Number(c.args.find((a) => typeof a === 'number' && a > 0.1)) || 1.7);
+    const list = names.length ? names : ['idle'];
+    const i = Math.floor(Math.max(0, c.u) / hold) % list.length;
+    return { pack: { name: list[i], u: c.u, d: c.d }, face: { sweat: 0 } };
+  },
+};
+
 CLIPS['pose-pack'] = {
   dur: 1.0, rin: 0.01, rout: 0.01, linear: true,
   f(c) {

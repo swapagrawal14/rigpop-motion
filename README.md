@@ -422,7 +422,7 @@ src/v3/imgops.mjs         chroma key, connected components, re-ink, principal ax
 src/v3/autorig.mjs        part sheets -> parts/*.png + rig.json (cut, pivots, face anchors)
 src/v3/imagerig.mjs       draws a solved v2 pose with painted parts (bent limb strips, face patches)
 src/v3/sleeves.mjs        paints sleeves into the torso, picks the shoulder joints under them
-src/v3/posepack.mjs       pose packs: cut, normalise, timing, the [K pose-pack ...] verb
+src/v3/posepack.mjs       pose packs: cut, normalise, timing, [K pose-pack ...] and the gesture rotation [K poses ...]
 src/v3/facepatch.mjs      keeps the face alive on a pose pack: blink, eye darts, lip-sync patches
 src/v3/set-guide.mjs      renders the v2 set as a layout guide for the image model
 src/v3/plates.mjs         painted plates + image props through the engine's scene hooks

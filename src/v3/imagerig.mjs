@@ -458,7 +458,9 @@ function paintPose(g, IR, R, P, pack, j, lift, alpha, vel, microBase) {
 //    the same transform as the head.
 export function drawPack(g, IR, R, P) {
   const pk = P.pack, pack = IR.packs[pk.name]; if (!pack) return false;
-  const st = packState(pack, pk.u, pk.d);
+  // a small stable offset per character, so two talkers in one shot are not in sync
+  const gOff = [...String(pk.name || '')].reduce((a, c2) => a + c2.charCodeAt(0), 0) * 0.37;
+  const st = packState(pack, pk.u, pk.d, { offset: gOff });
   const bust = pack.mode === 'bust';
   const k = bust ? (pack.bustScale || (R.headRx * 1.18) / pack.headRx) : pack.scale * (pack.standPx ? IR.standH / pack.standPx : R.headRx / pack.headRx);
   IR._k = k;
@@ -476,9 +478,18 @@ export function drawPack(g, IR, R, P) {
 }
 
 // Which key, how high, how fast. Keys hold on twos; lift follows the pack's arc.
-export function packState(pack, u, d) {
+export function packState(pack, u, d, opts = {}) {
   const total = pack.keys.reduce((a, k) => a + k.t, 0);
-  const x = clamp(u / d, 0, 0.9999) * total;
+  // A pack with more than one key is a GESTURE set, not one drawing held forever: while the line is
+  // spoken the character keeps changing gesture, the way people do when they talk. Each key holds for
+  // a beat (~0.8 s, proportionally to its authored time), so a three-key pack cycles every ~2.4 s.
+  // The offset means two people in the same shot do not gesture in lockstep.
+  const multi = pack.keys.length > 1;
+  const beat = opts.beat ?? 0.8;
+  const cycle = multi ? Math.max(1.2, beat * pack.keys.length) : total;
+  const offset = opts.offset ?? 0;
+  const phase = multi ? (((u + offset) % cycle) + cycle) % cycle / cycle : clamp(u / d, 0, 0.9999);
+  const x = phase * total;
   let acc = 0, i = 0; for (; i < pack.keys.length - 1; i++) { if (x < acc + pack.keys[i].t) break; acc += pack.keys[i].t; }
   const lift = (xx) => {
     // piecewise: each key has a target lift; ease between key starts (ballistic in the air)
@@ -489,7 +500,7 @@ export function packState(pack, u, d) {
     }
     return 0;
   };
-  const dt = 0.02 * total / d;
+  const dt = 0.02 * total / (multi ? cycle : d);
   const L = lift(x), L2 = lift(Math.min(total, x + dt));
   const K = pack.keys[i];
   return { i, lift: L, vel: -(L2 - L) / (0.02), sx: K.sx, sy: K.sy };
