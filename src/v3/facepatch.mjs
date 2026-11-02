@@ -796,8 +796,8 @@ export async function patchPoses(charDir, { only = null, log = () => {} } = {}) 
           fs.writeFileSync(path.join(pdir, f), c.toBuffer('image/png'));
           K.face.mouth.files[tag] = f;
         }
-        if (Object.keys(K.face.mouth.files).length) done++;
       }
+      if (K.face.blink || K.face.eyes || (K.face.mouth && Object.keys(K.face.mouth.files).length)) done++;
     }
     fs.writeFileSync(packFile, JSON.stringify(pack, null, 1));
     log(`  ${ch}/${name}: face patches on ${done}/${pack.keys.length} key(s)`);

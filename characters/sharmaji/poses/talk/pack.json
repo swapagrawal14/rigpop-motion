@@ -3,30 +3,30 @@
  "mode": "full",
  "from": "t1.png, t2.png, t3.png",
  "scale": 1,
- "standPx": 671,
+ "standPx": 691,
  "bustScale": 1,
- "width": 344,
- "height": 686,
+ "width": 369,
+ "height": 692,
  "keys": [
   {
    "file": "key0.png",
    "source": "t1.png",
    "foot": {
-    "x": 116.4554565701559,
-    "y": 681
+    "x": 140.05560592323965,
+    "y": 686
    },
-   "w": 328,
-   "h": 686,
+   "w": 349,
+   "h": 691,
    "pose": 0,
    "t": 0.3,
    "lift": 0,
    "face": {
     "blink": {
      "file": "key0.blink.png",
-     "x": 62,
-     "y": 46,
-     "w": 118,
-     "h": 38
+     "x": 92,
+     "y": 58,
+     "w": 70,
+     "h": 34
     },
     "eyes": {
      "file": "key0.eyes.png",
@@ -34,15 +34,15 @@
       "file": "key0.pupils.png",
       "x": 5,
       "y": 5,
-      "w": 109,
-      "h": 29
+      "w": 61,
+      "h": 25
      }
     },
     "mouth": {
      "x": 139,
-     "y": 106,
-     "w": 26,
-     "h": 28,
+     "y": 118,
+     "w": 25,
+     "h": 23,
      "files": {
       "rest": "key0.m.rest.png",
       "M": "key0.m.M.png",
@@ -50,27 +50,27 @@
       "O": "key0.m.O.png",
       "E": "key0.m.E.png"
      },
-     "erased": 342,
+     "erased": 147,
      "inkLeft": 0
     }
    },
    "faceBox": {
-    "x": 50,
-    "y": 23,
-    "w": 143,
-    "h": 136
+    "x": 87,
+    "y": 39,
+    "w": 87,
+    "h": 123
    },
-   "neckY": 159
+   "neckY": 162
   },
   {
    "file": "key1.png",
    "source": "t2.png",
    "foot": {
-    "x": 136.5728624535316,
-    "y": 681
+    "x": 140.64244626097488,
+    "y": 686
    },
-   "w": 283,
-   "h": 686,
+   "w": 369,
+   "h": 691,
    "pose": 1,
    "t": 0.3,
    "lift": 0,
@@ -78,9 +78,9 @@
     "blink": {
      "file": "key1.blink.png",
      "x": 96,
-     "y": 42,
-     "w": 86,
-     "h": 41
+     "y": 56,
+     "w": 70,
+     "h": 34
     },
     "eyes": {
      "file": "key1.eyes.png",
@@ -88,15 +88,15 @@
       "file": "key1.pupils.png",
       "x": 5,
       "y": 5,
-      "w": 76,
-      "h": 29
+      "w": 61,
+      "h": 25
      }
     },
     "mouth": {
-     "x": 136,
-     "y": 94,
-     "w": 44,
-     "h": 30,
+     "x": 127,
+     "y": 114,
+     "w": 47,
+     "h": 26,
      "files": {
       "rest": "key1.m.rest.png",
       "M": "key1.m.M.png",
@@ -104,37 +104,37 @@
       "O": "key1.m.O.png",
       "E": "key1.m.E.png"
      },
-     "erased": 366,
+     "erased": 486,
      "inkLeft": 0
     }
    },
    "faceBox": {
-    "x": 88,
-    "y": 16,
-    "w": 103,
-    "h": 135
+    "x": 91,
+    "y": 37,
+    "w": 93,
+    "h": 127
    },
-   "neckY": 151
+   "neckY": 163
   },
   {
    "file": "key2.png",
    "source": "t3.png",
    "foot": {
-    "x": 118.58856682769726,
-    "y": 666
+    "x": 134.93293051359515,
+    "y": 687
    },
-   "w": 344,
-   "h": 671,
+   "w": 289,
+   "h": 692,
    "pose": 2,
    "t": 0.4,
    "lift": 0,
    "face": {
     "blink": {
      "file": "key2.blink.png",
-     "x": 201,
-     "y": 59,
-     "w": 77,
-     "h": 39
+     "x": 92,
+     "y": 60,
+     "w": 74,
+     "h": 36
     },
     "eyes": {
      "file": "key2.eyes.png",
@@ -142,15 +142,15 @@
       "file": "key2.pupils.png",
       "x": 5,
       "y": 5,
-      "w": 68,
-      "h": 29
+      "w": 65,
+      "h": 27
      }
     },
     "mouth": {
-     "x": 225,
-     "y": 118,
-     "w": 32,
-     "h": 30,
+     "x": 110,
+     "y": 121,
+     "w": 36,
+     "h": 21,
      "files": {
       "rest": "key2.m.rest.png",
       "M": "key2.m.M.png",
@@ -158,17 +158,17 @@
       "O": "key2.m.O.png",
       "E": "key2.m.E.png"
      },
-     "erased": 354,
+     "erased": 115,
      "inkLeft": 0
     }
    },
    "faceBox": {
-    "x": 195,
-    "y": 35,
-    "w": 90,
-    "h": 140
+    "x": 86,
+    "y": 39,
+    "w": 86,
+    "h": 122
    },
-   "neckY": 175
+   "neckY": 161
   }
  ]
 }

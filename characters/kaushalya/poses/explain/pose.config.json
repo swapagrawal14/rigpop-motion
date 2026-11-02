@@ -1,0 +1,9 @@
+{
+ "mode": "full",
+ "out": "full",
+ "face": {
+  "key0": {
+   "mouth": "skip"
+  }
+ }
+}

@@ -514,6 +514,12 @@ export function drawImageCharacter(g, R, P, J, { pass = 'body', t = 0, drawProp 
   if (!P.pack && IR.poseOnly && IR.fallbackPose && IR.packs[IR.fallbackPose]) {
     P = { ...P, pack: { name: IR.fallbackPose, u: 0, d: 1 } };
   }
+  // a gesture the rig does not own falls back to its talk pack, then its idle pack: a character should
+  // never vanish because a script or an expression plan named a pose it was never drawn in
+  if (P.pack && !IR.packs[P.pack.name]) {
+    const alt = [IR.fallbackPose, 'talk', 'idle', Object.keys(IR.packs)[0]].find((n) => n && IR.packs[n]);
+    if (alt) P = { ...P, pack: { ...P.pack, name: alt } };
+  }
   if (P.pack && pass === 'body' && IR.packs[P.pack.name]) {
     const pk = IR.packs[P.pack.name];
     if (pk.mode === 'bust' && !P.legs.hidden) drawLegs(g, IR, R, P, J); // the drawing is waist-up

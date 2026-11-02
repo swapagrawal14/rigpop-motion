@@ -180,17 +180,45 @@ function shirtText(im, T) {
 
 // The script verb. The puppet keeps solving underneath (camera framing, FX anchors), the
 // drawer swaps in the pack's keys while the clip's weight is up.
-// [S poses talk talk point idle 60s &] — a GESTURE ROTATION rather than one held drawing. While the
-// line is spoken the character keeps changing pose on a beat, the way people gesture when they talk:
-// the first pack is the home pose, the rest are the gestures it moves through, and a multi-key pack
-// (talk has three keys) cycles inside its own turn. Every change is a cut, like a held drawing being
-// swapped in a 2D scene — nothing is cross-faded, so no pose is ever on screen twice.
+// Gesture vocabularies per EMOTION. A person talking normally does not wave their arms; a person who is
+// shocked puts a hand to their head; someone smug folds their arms; someone angry jabs a finger. So the
+// rotation is chosen from the expression on the line (`S (angry): ...`), not fixed per character.
+//
+// The list ORDER is the performance: `talk` carries the lip-sync (its keys have mouth patches), and the
+// other poses are accents that break it up. They are deliberately a minority of the rotation — an accent
+// has no lip-sync, so it is a held pose for a beat, the way a real speaker stops to think or shrugs
+// mid-sentence. Packs a rig does not have fall through to its talk pack.
+const GESTURES = {
+  neutral: ['talk', 'listen', 'talk', 'explain'],
+  happy: ['talk', 'explain', 'talk', 'listen'],
+  smug: ['talk', 'think', 'talk', 'listen'],
+  sneaky: ['talk', 'think', 'listen', 'talk'],
+  naughty: ['talk', 'point', 'talk', 'listen'],
+  excited: ['talk', 'point', 'explain', 'point', 'talk'],
+  hungry: ['talk', 'listen', 'talk'],
+  bliss: ['talk', 'listen', 'talk'],
+  laugh: ['talk', 'point', 'talk', 'explain'],
+  shock: ['talk', 'think', 'listen', 'talk'],
+  scared: ['talk', 'think', 'talk'],
+  sad: ['talk', 'listen', 'talk'],
+  angry: ['point', 'talk', 'point', 'explain'],
+};
+// how long each gesture holds; a big emotion changes pose faster than a relaxed one
+const GESTURE_HOLD = { angry: 1.25, shock: 1.3, excited: 1.35, scared: 1.4, laugh: 1.5, neutral: 1.9 };
+
+// [S poses 60s &] — "keep gesturing while you say this". The gesture comes from the line's expression.
+// [S poses talk point 60s &] — an explicit rotation, when the script wants to say exactly what happens.
 CLIPS['poses'] = {
   dur: 1.0, rin: 0.01, rout: 0.01, linear: true,
   f(c) {
-    const names = c.args.map((a) => String(a)).filter((a) => /^[a-z][a-z0-9-]*$/i.test(a) && !/^\d/.test(a));
-    const hold = Math.max(0.6, Number(c.args.find((a) => typeof a === 'number' && a > 0.1)) || 1.7);
-    const list = names.length ? names : ['idle'];
+    const named = (c.args || []).map((a) => String(a)).filter((a) => /^[a-z][a-z0-9-]*$/i.test(a) && !/^\d/.test(a));
+    const holdArg = Number((c.args || []).find((a) => typeof a === 'number' && a > 0.1)) || null;
+    // which line is this character on, right now: that line's expression drives the gesture
+    const t = c.t ?? 0;
+    const seg = (c.A && c.A.speech ? c.A.speech : []).find((sg) => t >= sg.t0 - 0.05 && t <= sg.t1 + 0.05);
+    const mood = seg && seg.expr ? seg.expr : (seg ? 'neutral' : 'neutral');
+    const list = named.length ? named : (GESTURES[mood] || GESTURES.neutral);
+    const hold = holdArg || GESTURE_HOLD[mood] || 1.7;
     const i = Math.floor(Math.max(0, c.u) / hold) % list.length;
     return { pack: { name: list[i], u: c.u, d: c.d }, face: { sweat: 0 } };
   },

@@ -18,7 +18,7 @@ cast:
 [shot wide]
 [stove on]
 [sfx boil 0.45]
-[B poses idle point idle 60s &]
+[B poses 60s &]
 [wait 0.6s]
 B (sneaky): Raat ke do baje... sirf chai jaagti hai.
 [shot medium B]
@@ -28,7 +28,7 @@ B (sneaky): Raat ke do baje... sirf chai jaagti hai.
 # 2 · A customer appears
 [shot wide]
 [C sneak counter-right 3.0s &]
-[C poses excited talk excited 60s &]
+[C poses 60s &]
 [wait 0.3s]
 C (excited): Bhaiya! Ek full glass!
 [sfx clink 0.5]
@@ -37,7 +37,7 @@ C (excited): Bhaiya! Ek full glass!
 
 # 3 · The philosophy of the cutting
 [shot medium B]
-[B poses folded talk folded 60s &]
+[B poses 60s &]
 [wait 0.2s]
 B (smug): Full? Bhaiya, cutting chai ke devta hain.
 [wait 0.9s]
@@ -52,7 +52,7 @@ B (bliss): Aadhi mein bhi pyaar hota hai.
 
 # 5 · The counter-argument
 [shot medium C]
-[C poses point talk point 60s &]
+[C poses 60s &]
 [wait 0.2s]
 C (naughty): Aadhi mein sirf hisaab hota hai!
 [sfx sting 0.4]
@@ -60,7 +60,7 @@ C (naughty): Aadhi mein sirf hisaab hota hai!
 
 # 6 · The new rule
 [shot medium B]
-[B poses point talk point folded 60s &]
+[B poses 60s &]
 [wait 0.2s]
 B (excited): Naya rule! Full glass... double paisa!
 [wait 1.0s]
@@ -75,7 +75,7 @@ C (happy): Deal!
 
 # 8 · Payoff
 [shot medium B]
-[B poses idle point idle 60s &]
+[B poses 60s &]
 [wait 0.2s]
 B (happy): Tapri kabhi band nahi hoti.
 [wait 0.7s]
