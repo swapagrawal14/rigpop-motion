@@ -1,0 +1,66 @@
+{
+ "action": "explain",
+ "mode": "full",
+ "from": "explain.png",
+ "scale": 1,
+ "standPx": 626,
+ "bustScale": 1,
+ "width": 346,
+ "height": 626,
+ "keys": [
+  {
+   "file": "key0.png",
+   "source": "explain.png",
+   "foot": {
+    "x": 219.81063900970224,
+    "y": 621
+   },
+   "w": 346,
+   "h": 626,
+   "pose": 0,
+   "t": 0.4,
+   "lift": 0,
+   "face": {
+    "blink": {
+     "file": "key0.blink.png",
+     "x": 158,
+     "y": 61,
+     "w": 76,
+     "h": 40
+    },
+    "eyes": {
+     "file": "key0.eyes.png",
+     "pupil": {
+      "file": "key0.pupils.png",
+      "x": 9,
+      "y": 5,
+      "w": 63,
+      "h": 31
+     }
+    },
+    "mouth": {
+     "x": 178,
+     "y": 146,
+     "w": 26,
+     "h": 13,
+     "files": {
+      "rest": "key0.m.rest.png",
+      "M": "key0.m.M.png",
+      "A": "key0.m.A.png",
+      "O": "key0.m.O.png",
+      "E": "key0.m.E.png"
+     },
+     "erased": 159,
+     "inkLeft": 0
+    }
+   },
+   "faceBox": {
+    "x": 152,
+    "y": 36,
+    "w": 88,
+    "h": 135
+   },
+   "neckY": 171
+  }
+ ]
+}

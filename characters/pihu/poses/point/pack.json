@@ -1,0 +1,66 @@
+{
+ "action": "point",
+ "mode": "full",
+ "from": "point.png",
+ "scale": 1,
+ "standPx": 656,
+ "bustScale": 1,
+ "width": 323,
+ "height": 656,
+ "keys": [
+  {
+   "file": "key0.png",
+   "source": "point.png",
+   "foot": {
+    "x": 198.3280848329049,
+    "y": 651
+   },
+   "w": 323,
+   "h": 656,
+   "pose": 0,
+   "t": 0.4,
+   "lift": 0,
+   "face": {
+    "blink": {
+     "file": "key0.blink.png",
+     "x": 128,
+     "y": 88,
+     "w": 84,
+     "h": 39
+    },
+    "eyes": {
+     "file": "key0.eyes.png",
+     "pupil": {
+      "file": "key0.pupils.png",
+      "x": 5,
+      "y": 5,
+      "w": 75,
+      "h": 30
+     }
+    },
+    "mouth": {
+     "x": 149,
+     "y": 134,
+     "w": 35,
+     "h": 26,
+     "files": {
+      "rest": "key0.m.rest.png",
+      "M": "key0.m.M.png",
+      "A": "key0.m.A.png",
+      "O": "key0.m.O.png",
+      "E": "key0.m.E.png"
+     },
+     "erased": 284,
+     "inkLeft": 0
+    }
+   },
+   "faceBox": {
+    "x": 121,
+    "y": 64,
+    "w": 99,
+    "h": 119
+   },
+   "neckY": 183
+  }
+ ]
+}
