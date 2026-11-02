@@ -78,6 +78,26 @@ pose-only: it holds `rig.defaultPose` (else `idle`) whenever no pose-pack clip i
 assembles the puppet, because that puppet would be *the other character* on screen. Name your own
 `defaultPose` in `rig.json` for a character that should stand in something other than `idle`.
 
+### A whole reel with no puppets: “Chappal Pro Max”
+
+`scripts/chappal-pro-max.md` (32 s, 12 lines) is the worked example of the strict version of the
+rule: **two characters, four full-body drawn poses each, zero skeleton**. No part assembly, no IK,
+no blends — the drawing is swapped on a hard cut and the camera, breath, blinks and mouth carry the
+life. Poses are chosen by the emotion of the line (`listen` / `think` / `point` / `explain`) and
+held per beat with `[P poses point 60s &]`, so nothing rotates through a loop.
+
+Three lessons from that reel, all of them written up in
+[docs/CHAPPAL-PRO-MAX.md](docs/CHAPPAL-PRO-MAX.md):
+
+* a pack with no `parts/mouth.{A,E,M,O}.png` renders perfectly and never moves its mouth —
+  `face.mouth.files` comes back `{}`;
+* `[shot medium K]` centre-crops a vertical frame and puts the head off-screen; author it as
+  `[shot at <x> <y> <zoom>]` and stay in the 2.0–2.4× range;
+* `[<actor> poses <pack> <n>s &]` — the `&` runs the clip *alongside* the line instead of between
+  lines, naming a pack pins the actor to that one drawing, and leaving the name out
+  (`[<actor> poses 60s &]`) cycles the emotion's own vocabulary instead, with `talk` carrying the
+  lip-sync. Pick one per beat, or a beat can land on a pose the script never asked for.
+
 `rigpop-motion qa [character|script.md]` is the gate for all of this. A pose key with no face patch is
 a **failure** — that is the silent bug where a character animates perfectly and never blinks or
 speaks. It also checks patch rects against the key image, face-size and skin-tone drift across a pack,
