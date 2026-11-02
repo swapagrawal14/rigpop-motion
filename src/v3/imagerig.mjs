@@ -407,10 +407,30 @@ function paintPose(g, IR, R, P, pack, j, lift, alpha, vel, microBase) {
   const sxK = K.sx ?? 1, syK = K.sy ?? 1;
   const base = () => { g.translate(sway, -lift - breath); g.scale((k * sxK) / Math.sqrt(squash), k * squash * syK); };
 
-  g.save(); g.globalAlpha *= alpha; base();
-  g.translate(0, hipY); g.rotate(bodyRot); g.translate(0, -hipY);
-  g.drawImage(img, -footX, -footY);
-  g.restore();
+  {   // the BODY, with its head region faded out. The head is drawn separately below, so if the body
+    // copy still carried a head there would be two: the drawn one, sitting where the artist put it, and
+    // the tipped one on top. That is the overlap — a head that does not follow the turn and shows
+    // through wherever the tipped copy has moved off it. Body fades out above the neck, head fades out
+    // below it, so exactly one head is on screen at every angle.
+    const W = Math.ceil(img.width) + 4, H = Math.ceil(img.height) + 4;
+    if (!IR._bc || IR._bc.width < W || IR._bc.height < H) IR._bc = createCanvas(Math.max(W, IR._bc ? IR._bc.width : 0), Math.max(H, IR._bc ? IR._bc.height : 0));
+    const bc = IR._bc, bg = bc.getContext('2d');
+    bg.setTransform(1, 0, 0, 1, 0, 0);
+    bg.globalCompositeOperation = 'source-over'; bg.globalAlpha = 1;
+    bg.clearRect(0, 0, bc.width, bc.height);
+    bg.drawImage(img, 0, 0);
+    bg.globalCompositeOperation = 'destination-in';
+    const bgy = pivotY + footY;                       // the neck line, in image pixels
+    const bgr = bg.createLinearGradient(0, bgy - band * 2.2, 0, bgy + band * 2.2);
+    bgr.addColorStop(0, 'rgba(0,0,0,0)'); bgr.addColorStop(0.55, 'rgba(0,0,0,1)'); bgr.addColorStop(1, 'rgba(0,0,0,1)');
+    bg.fillStyle = bgr; bg.fillRect(0, 0, bc.width, bc.height);
+    bg.globalCompositeOperation = 'source-over';
+
+    g.save(); g.globalAlpha *= alpha; base();
+    g.translate(0, hipY); g.rotate(bodyRot); g.translate(0, -hipY);
+    g.drawImage(bc, 0, 0, bc.width, bc.height, -footX, -footY, bc.width, bc.height);
+    g.restore();
+  }
 
   {   // head, tipped about the neck line and faded into the body with a soft gradient
     const W = Math.ceil(img.width) + 4, H = Math.ceil(img.height) + 4;
@@ -424,7 +444,7 @@ function paintPose(g, IR, R, P, pack, j, lift, alpha, vel, microBase) {
     og.globalCompositeOperation = 'destination-in';
     const gy = pivotY + footY;
     const gr = og.createLinearGradient(0, gy - band * 2.2, 0, gy + band * 2.2);
-    gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.42, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.45, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
     og.fillStyle = gr; og.fillRect(0, 0, oc.width, oc.height);
     og.globalCompositeOperation = 'source-over';
     g.save(); g.globalAlpha *= alpha; base();
