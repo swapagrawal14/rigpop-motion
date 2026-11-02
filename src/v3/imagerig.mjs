@@ -25,6 +25,14 @@ const MOUTH_TAG = {
   rest: 'rest', smile: 'rest', smirk: 'rest', frown: 'rest', wobble: 'rest',
 };
 
+// a character whose rig borrows another character's part files has no art of its own: the puppet
+// assembled from those files would draw SOMEBODY ELSE on screen. Such a rig is pose-only — it may
+// only ever be drawn from its pose packs, and drawImageCharacter falls back to its default pack.
+function borrowsParts(rig) {
+  const own = Object.values(rig.parts).map((p) => String(p.file || ''));
+  return rig.poseOnly === true || own.some((f) => f.startsWith('..'));
+}
+
 export async function loadImageRig(dir) {
   const rig = JSON.parse(fs.readFileSync(path.join(dir, 'rig.json'), 'utf8'));
   const img = {};
@@ -84,6 +92,9 @@ export async function loadImageRig(dir) {
     }
     IR.packs[a] = pack;
   }
+  // the pose a pose-only character holds when no pack clip is running — 'idle' if it exists
+  IR.poseOnly = borrowsParts(rig);
+  if (rig.poseOnly !== false && IR.poseOnly) IR.fallbackPose = rig.defaultPose || (IR.packs.idle ? 'idle' : Object.keys(IR.packs)[0] || null);
   return R;
 }
 
@@ -177,6 +188,9 @@ function silhouette(im, colour) {
 // Over-the-shoulder back view, same placement as the front parts.
 export function drawBackImg(g, R, P, J) {
   const IR = R.image, T = IR.rig.parts.torso, k = IR.kT;
+  // a pose-only rig has no back art of its own (the silhouette would be the borrowed character):
+  // the pack drawing is the only honest thing to show
+  if (IR.poseOnly) return;
   g.save(); g.translate(J.hip.x, J.hip.y); g.rotate(P.lean); g.translate(0, -R.torsoH); g.scale(k * 1.08, k);
   g.drawImage(IR.backTorso.canvas, -T.hip.x - IR.backTorso.pad, -T.shirtTop - IR.backTorso.pad); g.restore();
   limb(g, [J.neckBase, { x: J.head.x, y: J.head.y + R.headRy * 0.6 }], R.neckW, IR.rig.skin, IR.rig.skinShade);
@@ -494,6 +508,11 @@ export function packState(pack, u, d) {
 /* ------------------------------------------------------------------ entry */
 export function drawImageCharacter(g, R, P, J, { pass = 'body', t = 0, drawProp = null } = {}) {
   const IR = R.image;
+  // a pose-only rig (no art of its own) must never fall through to the puppet: hold its default
+  // pose pack instead, so the frame is always THIS character and never the rig it borrowed from
+  if (!P.pack && IR.poseOnly && IR.fallbackPose && IR.packs[IR.fallbackPose]) {
+    P = { ...P, pack: { name: IR.fallbackPose, u: 0, d: 1 } };
+  }
   if (P.pack && pass === 'body' && IR.packs[P.pack.name]) {
     const pk = IR.packs[P.pack.name];
     if (pk.mode === 'bust' && !P.legs.hidden) drawLegs(g, IR, R, P, J); // the drawing is waist-up

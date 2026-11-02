@@ -72,6 +72,12 @@ Pose keys also carry the rig's always-on idle, and a living-pose warp: the head 
 the neck and the body leans about the hip, with the blink/mouth patches inside the same transform.
 A held drawing therefore keeps breathing, nodding and turning instead of freezing.
 
+**A character with no art of its own is pose-only.** If a `rig.json` borrows another character's part
+files (a path like `../bunty/parts/torso.png`) or sets `"poseOnly": true`, the engine treats it as
+pose-only: it holds `rig.defaultPose` (else `idle`) whenever no pose-pack clip is running and never
+assembles the puppet, because that puppet would be *the other character* on screen. Name your own
+`defaultPose` in `rig.json` for a character that should stand in something other than `idle`.
+
 `rigpop-motion qa [character|script.md]` is the gate for all of this. A pose key with no face patch is
 a **failure** — that is the silent bug where a character animates perfectly and never blinks or
 speaks. It also checks patch rects against the key image, face-size and skin-tone drift across a pack,

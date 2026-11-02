@@ -96,7 +96,14 @@ export async function checkCharacter(charDir) {
   const rig = JSON.parse(fs.readFileSync(path.join(charDir, 'rig.json'), 'utf8'));
   const poses = path.join(charDir, 'poses');
   const packs = fs.existsSync(poses) ? fs.readdirSync(poses).filter((a) => !a.startsWith('_') && fs.existsSync(path.join(poses, a, 'pack.json'))) : [];
-  if (!packs.length) rows.push({ level: WARN, where: name, msg: 'no pose packs: this character can only act through the puppet rig' });
+  // does this rig have art of its own, or is it standing on another character's part files?
+  const borrowed = Object.values(rig.parts || {}).map((p) => String(p.file || '')).filter((f) => f.startsWith('..'));
+  const poseOnly = rig.poseOnly === true || borrowed.length > 0;
+  if (poseOnly) {
+    const from = [...new Set(borrowed.map((f) => f.replace(/^\.\.\//, '').split('/')[0]))];
+    rows.push({ level: WARN, where: name, msg: `pose-only: ${borrowed.length} part file(s) borrowed from ${from.join(', ') || '(copied rig)'} — the engine will hold ${rig.defaultPose || 'idle'} and must never draw the puppet` });
+    if (!packs.length) rows.push({ level: FAIL, where: name, msg: 'pose-only rig with no pose packs: there is no art to draw at all (the puppet would be another character)' });
+  } else if (!packs.length) rows.push({ level: WARN, where: name, msg: 'no pose packs: this character can only act through the puppet rig' });
   for (const a of packs) rows.push(...await checkPack(charDir, a, { rig }));
   // the mouth kit the patches paste from has to exist, or every patch silently falls back to rest
   for (const p of ['mouth.M', 'mouth.A', 'mouth.O', 'mouth.E']) if (!fs.existsSync(path.join(charDir, 'parts', p + '.png'))) rows.push({ level: WARN, where: name, msg: `parts/${p}.png missing: no lip-sync shape for it` });

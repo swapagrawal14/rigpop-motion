@@ -68,3 +68,34 @@ Anything marked **fixed here** is committed to the working tree of this checkout
   `head.34` key per pose or a face mesh warp.
 - **No drawn in-betweens**: fast pose changes use a smear ghost plus speed lines, not real
   breakdowns. That is the last big gap between this and hand-drawn pose-to-pose.
+
+## F · The bug that made a "new characters" reel open with the old ones
+
+Reported from the render, not from the code: the first 2–3 seconds of the Namkeen Chai reel showed
+**Bunty** standing at the counter, then snapped to the new cast.
+
+Cause — the engine, not a cache:
+
+- `characters/sharmaji/rig.json` and `characters/kaushalya/rig.json` borrow Bunty's part files
+  (`"file": "../bunty/parts/torso.png"`) so the rig metrics (shoulder width, standing height) can be
+  reused without redrawing a puppet nobody will ever see.
+- `drawImageCharacter()` only drew a pack while a `pose-pack` clip was running. Outside one it fell
+  through to the puppet — i.e. it assembled **Bunty's torso, head and limbs** out of the borrowed
+  files and drew them, under the new character's name.
+- `[K pose-pack idle 60s &]` starts at 0.4 s (the clips before it occupy the first 0.4 s), and `&`
+  marks it as ambient, so for those 0.4 s — and for any later gap — the puppet was on screen.
+  `drawBackImg()` had the same hole for over-the-shoulder shots.
+
+Fixes:
+
+1. `loadImageRig()` flags such a rig as **pose-only** (any part path that points outside the
+   character folder, or `"poseOnly": true` in `rig.json`).
+2. `drawImageCharacter()` holds the rig's default pack (`rig.defaultPose`, else `idle`) whenever no
+   pack clip is running, so a pose-only character can never fall back to the puppet.
+3. `drawBackImg()` draws nothing for a pose-only rig instead of the borrowed silhouette.
+4. `rigpop-motion qa` now reports it: `pose-only: 24 part file(s) borrowed from bunty`, and a
+   pose-only rig with **no** packs is a FAIL.
+
+Anti-pattern this replaces: "always remember to start a pose pack at t=0". A pipeline whose
+correctness depends on remembering is the bug. A character with no art of its own must not have a
+puppet path at all.
